@@ -111,14 +111,10 @@ class UserController {
   async verifyToken(req,res,next){
     try{
       const token = req.cookies.token;
-      console.log('Cookie token:', req.cookies.token);
-      
       if(!token){
         return res.status(400).json({success:false , message:'not authorized token missing'})
       }
         const verify = jwt.verify(token,process.env.SecretKey);
-        console.log('Successfully decoded:', verify); 
-        console.log('Successfully decoded:', verify.email); 
         const [result] = await db.connection.promise().query("SELECT * FROM parent where email = ?",[verify.email]);
         if(result.length === 0){
           return res.status(400).json({success:false,message:"user doesnot exists"});
@@ -250,6 +246,50 @@ class UserController {
       else{
         return res.status(400).json({success:false , message:"Invalid otp"});
       }
+  }
+
+  async profileData(req,res){
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+  
+    try {
+      const email = req.user.email; 
+      console.log(email)
+  
+      // SQL query to fetch parent and student data based on parent email
+      const sql = `
+        SELECT 
+          s.student_id,
+          s.name AS student_name,
+          s.age,
+          s.grade,
+          p.parent_id,
+          p.contact_number,
+          p.email,
+          r.rfid_tag_id
+        FROM 
+          Student s
+        LEFT JOIN 
+          Parent p ON s.student_id = p.student_id
+        LEFT JOIN 
+          rfid_card r ON s.student_id = r.student_id
+        WHERE 
+          p.email = ?;
+      `;
+      
+      // Execute the query and get the result
+      const result = await db.connection.promise().query(sql, [email]);
+      console.log(result[0])
+      // If no data is found
+      if (result.length === 0) {
+        return res.status(404).json({ message: 'No data found for this email' });
+      }
+      res.json(result[0]); 
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
   }
 
   async generateOpt(req,res){

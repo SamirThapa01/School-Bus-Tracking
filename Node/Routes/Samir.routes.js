@@ -12,6 +12,7 @@ SamirRouter.post("/userSignup",userController.addUser);
 SamirRouter.post("/login",userController.handelLogin);
 SamirRouter.get("/verify",userController.verifyToken,userController.checkAuth);
 SamirRouter.post("/logout",userController.logout);
+SamirRouter.get("/profile",userController.verifyToken,userController.profileData);
 
 // Getting user details from database using GET method
 SamirRouter.get("/getAllUsers/:id", userController.getUsers);

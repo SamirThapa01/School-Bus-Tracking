@@ -1,18 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Signup.css";
+import axios from "axios";
 
 function Profile() {
-  // State object to manage both parent and student information
+  // State objects for both parent and student information
   const [profileData, setProfileData] = useState({
-    parentId: "P-2025-0042",
-    parentPhone: "(555) 123-4567",
-    parentEmail: "john.smith@example.com",
-    studentId: "S-2025-1084",
-    studentName: "Emily Smith",
-    studentGrade: "5th Grade",
-    studentRfidTag: "A67B2C45D90E",
-    studentAge: 10,
+    parentId: "",
+    parentPhone: "",
+    parentEmail: "",
+    studentId: "",
+    studentName: "",
+    studentGrade: "",
+    studentRfidTag: "",
+    studentAge: 0, // Ensure it’s a number, not undefined
   });
+  const [data, setData] = useState(null); // Initializing with null to check for data loading
 
   // Handle changes to the input fields
   const handleChange = (e) => {
@@ -23,25 +25,70 @@ function Profile() {
     }));
   };
 
-  // Handle saving data (e.g., sending data to API or saving locally)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8000/react/profile",
+          {
+            withCredentials: true,
+          }
+        );
+        console.log("API response:", response.data); // Log the response for debugging
+
+        // Check if the response is an array and take the first element
+        const profile = response.data[0]; // Get the first object in the array
+
+        // Set profile data into state
+        if (profile) {
+          setProfileData({
+            parentId: profile.parent_id || "", // Add default empty string if undefined
+            parentPhone: profile.contact_number || "",
+            parentEmail: profile.email || "",
+            studentId: profile.student_id || "",
+            studentName: profile.student_name || "",
+            studentGrade: profile.grade || "",
+            studentRfidTag: profile.rfid_tag_id || "",
+            studentAge: profile.age || 0, // Ensure a default number
+          });
+        }
+
+        // Set the fetched profile into a separate state if needed
+        setData(profile);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []); 
+
+
   const handleSave = () => {
     console.log("Saving data...");
     console.log(profileData);
+    // Implement save functionality (e.g., API request to save updated profile)
   };
 
   // Handle canceling (e.g., resetting to the original values)
   const handleCancel = () => {
-    setProfileData({
-      parentId: "01",
-      parentPhone: "9823455344",
-      parentEmail: "salinthapa633@gmail.com",
-      studentId: "02",
-      studentName: "samirThapa",
-      studentGrade: "5th Grade",
-      studentRfidTag: "A67B2C45D90E",
-      studentAge: 10,
-    });
+    if (data) {
+      setProfileData({
+        parentId: data.parent_id || "",
+        parentPhone: data.contact_number || "",
+        parentEmail: data.email || "",
+        studentId: data.student_id || "",
+        studentName: data.student_name || "",
+        studentGrade: data.grade || "",
+        studentRfidTag: data.rfid_tag_id || "",
+        studentAge: data.age || 0,
+      });
+    }
   };
+
+  if (!data) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="profile-card">
@@ -58,7 +105,7 @@ function Profile() {
               <input
                 type="text"
                 name="parentId"
-                value={profileData.parentId}
+                value={profileData.parentId || ""} 
                 onChange={handleChange}
               />
             </div>
@@ -70,7 +117,7 @@ function Profile() {
               <input
                 type="tel"
                 name="parentPhone"
-                value={profileData.parentPhone}
+                value={profileData.parentPhone || ""} 
                 onChange={handleChange}
               />
             </div>
@@ -82,7 +129,7 @@ function Profile() {
               <input
                 type="email"
                 name="parentEmail"
-                value={profileData.parentEmail}
+                value={profileData.parentEmail || ""} 
                 onChange={handleChange}
               />
             </div>
@@ -96,7 +143,7 @@ function Profile() {
               <input
                 type="text"
                 name="studentId"
-                value={profileData.studentId}
+                value={profileData.studentId || ""} 
                 onChange={handleChange}
               />
             </div>
@@ -108,7 +155,7 @@ function Profile() {
               <input
                 type="text"
                 name="studentName"
-                value={profileData.studentName}
+                value={profileData.studentName || ""} 
                 onChange={handleChange}
               />
             </div>
@@ -120,7 +167,7 @@ function Profile() {
               <input
                 type="number"
                 name="studentAge"
-                value={profileData.studentAge}
+                value={profileData.studentAge || 0} 
                 onChange={handleChange}
               />
             </div>
@@ -129,25 +176,12 @@ function Profile() {
           <div className="info-row">
             <div className="label">Grade:</div>
             <div className="value">
-              <select
+              <input
+                type="text"
                 name="studentGrade"
-                value={profileData.studentGrade}
+                value={profileData.studentGrade || ""} // Ensuring controlled input
                 onChange={handleChange}
-              >
-                <option>Kindergarten</option>
-                <option>1st Grade</option>
-                <option>2nd Grade</option>
-                <option>3rd Grade</option>
-                <option>4th Grade</option>
-                <option>5th Grade</option>
-                <option>6th Grade</option>
-                <option>7th Grade</option>
-                <option>8th Grade</option>
-                <option>9th Grade</option>
-                <option>10th Grade</option>
-                <option>11th Grade</option>
-                <option>12th Grade</option>
-              </select>
+              />
             </div>
           </div>
 
@@ -158,7 +192,7 @@ function Profile() {
                 type="text"
                 name="studentRfidTag"
                 className="rfid-tag"
-                value={profileData.studentRfidTag}
+                value={profileData.studentRfidTag || ""} // Ensuring controlled input
                 onChange={handleChange}
               />
             </div>

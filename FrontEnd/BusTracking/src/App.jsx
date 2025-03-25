@@ -15,6 +15,7 @@ import axios from "axios";
 import ProfilePage from "./Pages/ProfilePage";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AdminPanel from "./Components/AdminPanel";
 
 const App = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -97,6 +98,7 @@ const App = () => {
           }
         />
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+        <Route path="/admin" element={<AdminPanel/>}/>
       </Routes>
       {showLoginForm && (
         <Login
