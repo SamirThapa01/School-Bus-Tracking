@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
-import { GiHamburgerMenu } from "react-icons/gi";
+import { 
+  GiHamburgerMenu 
+} from "react-icons/gi";
+import { 
+  Clock, 
+  Bus, 
+  Users, 
+  Activity 
+} from "lucide-react";
 import Options from "./options";
 
 function NavBar({ handleClick, login, logins }) {
   const [time, setTime] = useState("");
   const [show, setShow] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const menuRef = useRef(null);
 
   const showDiv = () => {
@@ -18,8 +27,17 @@ function NavBar({ handleClick, login, logins }) {
       }
     }
 
+    function handleScroll() {
+      setIsScrolled(window.scrollY > 50);
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   useEffect(() => {
@@ -33,38 +51,67 @@ function NavBar({ handleClick, login, logins }) {
   }, []);
 
   return (
-    <>
-      <nav className="navbar">
-        <div className="navbar-logo-section">
-          <div className="navbar-logo">BTS</div>
-          <h2 className="navbar-title">Bus Tracking System</h2>
-        </div>
-
-        <div className="navbar-controls">
-          <div className="navbar-stats">
-            <div className="stat-item">
-              <span>Active Buses:</span>
-              <strong>1</strong>
-            </div>
-            <div className="stat-item">
-              <span>Students Picked:</span>
-              <strong>95%</strong>
+    <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
+      <div className="navbar-container">
+        <div className="navbar-brand">
+          <div className="navbar-logo-wrapper">
+            <Bus className="navbar-logo-icon" />
+            <div className="navbar-logo-text">
+              <div className="navbar-logo">BTS</div>
+              <h2 className="navbar-subtitle">Bus Tracking System</h2>
             </div>
           </div>
-          <span>{time}</span>
-          {login ? (
-            <div ref={menuRef} className="menu-container">
-              <GiHamburgerMenu onClick={showDiv} size={25} className="hamburger" />
-              {show && <Options logins={logins} login={login} setShow={setShow} />}
-            </div>
-          ) : (
-            <button className="login-button" onClick={handleClick}>
-              Login
-            </button>
-          )}
         </div>
-      </nav>
-    </>
+
+        <div className="navbar-content">
+          <div className="navbar-stats-container">
+            <div className="navbar-stats">
+              <div className="stat-item">
+                <Activity className="stat-icon" size={18} />
+                <span>Active Buses:</span>
+                <strong>1</strong>
+              </div>
+              <div className="stat-item">
+                <Users className="stat-icon" size={18} />
+                <span>Students Picked:</span>
+                <strong>95%</strong>
+              </div>
+            </div>
+            <div className="navbar-time">
+              <Clock className="time-icon" size={18} />
+              <span>{time}</span>
+            </div>
+          </div>
+
+          <div className="navbar-actions">
+            {login ? (
+              <div ref={menuRef} className="menu-container">
+                <button 
+                  onClick={showDiv} 
+                  className="hamburger-button"
+                >
+                  <GiHamburgerMenu size={25} />
+                </button>
+                {show && (
+                  <Options 
+                    logins={logins} 
+                    login={login} 
+                    setShow={setShow} 
+                  />
+                )}
+              </div>
+            ) : (
+              <button 
+                className="login-button" 
+                onClick={handleClick}
+              >
+                Login
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
   );
 }
 

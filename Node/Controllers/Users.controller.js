@@ -248,16 +248,47 @@ class UserController {
       }
   }
 
-  async profileData(req,res){
+  async profileData(req, res) {
     if (!req.user) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
   
     try {
-      const email = req.user.email; 
-      console.log(email)
+      const email = req.user.email;
+      console.log(email);
   
-      // SQL query to fetch parent and student data based on parent email
+      // SQL query to fetch parent data first
+      const parentSql = `
+        SELECT 
+          p.parent_id,
+          p.contact_number,
+          p.email,
+          s.student_id
+        FROM 
+          Parent p
+        LEFT JOIN 
+          Student s ON s.student_id = p.student_id
+        WHERE 
+          p.email = ?;
+      `;
+  
+      // Execute the query to fetch parent and student data
+      const [parentResult] = await db.connection.promise().query(parentSql, [email]);
+      console.log(parentResult);
+  
+      // If no parent data is found
+      if (parentResult.length === 0) {
+        return res.status(404).json({ message: 'No parent data found for this email' });
+      }
+  
+      const parentData = parentResult[0];
+  
+      // Check if student_id is null or empty (i.e., student data is missing)
+      if (!parentData.student_id) {
+        return res.status(200).json({ message: 'Student data is missing. Please fill in student details.' });
+      }
+  
+      // If student data exists, fetch detailed student and parent data
       const sql = `
         SELECT 
           s.student_id,
@@ -275,23 +306,174 @@ class UserController {
         LEFT JOIN 
           rfid_card r ON s.student_id = r.student_id
         WHERE 
-          p.email = ?;
+          s.student_id = ?;
       `;
-      
-      // Execute the query and get the result
-      const result = await db.connection.promise().query(sql, [email]);
-      console.log(result[0])
-      // If no data is found
-      if (result.length === 0) {
-        return res.status(404).json({ message: 'No data found for this email' });
+  
+      const [studentResult] = await db.connection.promise().query(sql, [parentData.student_id]);
+  
+      // If student data is found, return the profile data
+      if (studentResult.length === 0) {
+        return res.status(404).json({ message: 'No student data found for this parent' });
       }
-      res.json(result[0]); 
+  
+      const studentData = studentResult[0];
+      res.json(studentData);
     } catch (error) {
       console.error("Error fetching profile data:", error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   }
 
+  async fillStudent(req, res) {
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+  
+    try {
+      const parentEmail = req.user.email; // Assuming `email` is part of `req.user`
+  
+      // Extract student details from the request body
+      const { studentName, studentAge, studentGrade, studentRfidTag } = req.body;
+  
+      // Validate that the student details and RFID tag are provided
+      if (!studentName || !studentAge || !studentGrade || !studentRfidTag) {
+        return res.status(400).json({ message: 'All student fields (name, age, grade, RFID tag) are required' });
+      }
+  
+      // Query to fetch parent_id using the parent's email
+      const parentQuery = `
+        SELECT parent_id FROM Parent WHERE email = ?;
+      `;
+      const [parentResult] = await db.connection.promise().query(parentQuery, [parentEmail]);
+  
+      // If parent is not found, return an error
+      if (parentResult.length === 0) {
+        return res.status(404).json({ message: 'Parent not found' });
+      }
+  
+      const parentId = parentResult[0].parent_id; // Get parent_id from the query result
+  
+      // SQL query to insert the new student into the Student table
+      const studentQuery = `
+        INSERT INTO Student (name, age, grade)
+        VALUES (?, ?, ?);
+      `;
+      
+      // Execute the query to insert student data
+      const [studentResult] = await db.connection.promise().query(studentQuery, [studentName, studentAge, studentGrade]);
+  
+      // Check if the student was successfully inserted
+      if (studentResult.affectedRows === 0) {
+        return res.status(500).json({ message: 'Error adding student data' });
+      }
+  
+      // Get the new student_id from the inserted row
+      const studentId = studentResult.insertId;
+  
+      // Insert RFID tag into the rfid_card table
+      const rfidQuery = `
+        INSERT INTO rfid_card (rfid_tag_id, student_id)
+        VALUES (?, ?);
+      `;
+      const [rfidResult] = await db.connection.promise().query(rfidQuery, [studentRfidTag, studentId]);
+  
+      // Check if the RFID tag was successfully inserted
+      if (rfidResult.affectedRows === 0) {
+        return res.status(500).json({ message: 'Error adding RFID tag' });
+      }
+  
+      // Update the Parent table with the student_id
+      const updateParentSql = `
+        UPDATE Parent 
+        SET student_id = ?
+        WHERE parent_id = ?;
+      `;
+      const [updateParentResult] = await db.connection.promise().query(updateParentSql, [studentId, parentId]);
+  
+      // Check if the parent record was successfully updated
+      if (updateParentResult.affectedRows === 0) {
+        return res.status(500).json({ message: 'Error updating parent record with student ID' });
+      }
+  
+      // Respond with a success message
+      res.status(201).json({ message: 'Student data added, RFID tag inserted, and parent record updated successfully' });
+    } catch (error) {
+      console.error("Error adding student:", error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+  
+  async updateUserProfile(req, res) {
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+  
+    try {
+      const studentId = req.body.studentId;  // Get the student ID from the request body
+      const {
+        parentId,
+        parentPhone,
+        parentEmail,
+        studentName,
+        studentGrade,
+        studentRfidTag,
+        studentAge
+      } = req.body;
+  
+      // Ensure studentId is provided
+      if (!studentId) {
+        return res.status(400).json({ message: 'Student ID is required' });
+      }
+  
+      // Ensure rfid_tag_id is valid (not null or empty)
+      if (!studentRfidTag || studentRfidTag.trim() === "") {
+        return res.status(400).json({ message: 'RFID Tag ID is required' });
+      }
+  
+      // SQL query to update the student, parent, and RFID tag information
+      const sql = `
+        UPDATE 
+          Student s
+        LEFT JOIN 
+          Parent p ON s.student_id = p.student_id
+        LEFT JOIN 
+          rfid_card r ON s.student_id = r.student_id
+        SET
+          s.name = ?, 
+          s.age = ?, 
+          s.grade = ?, 
+          p.contact_number = ?, 
+          p.email = ?, 
+          r.rfid_tag_id = ?
+        WHERE 
+          s.student_id = ? AND p.parent_id = ?;
+      `;
+  
+
+      const result = await db.connection.promise().query(sql, [
+        studentName,
+        studentAge,
+        studentGrade,
+        parentPhone,
+        parentEmail,
+        studentRfidTag,
+        studentId,
+        parentId
+      ]);
+
+      if (result[0].affectedRows === 0) {
+        return res.status(404).json({ message: 'No student found with this ID or parent ID mismatch' });
+      }
+  
+      res.json({ message: 'Profile updated successfully!' });
+  
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+  
   async generateOpt(req,res){
         try{
           const {email} = req.body;
@@ -319,6 +501,42 @@ class UserController {
           res.status(500).json({success:false ,message:"failed to generate otp"})
         }
   }
+
+
+  async getAllStudents(req, res) {
+    try {
+      const sql = `
+        SELECT 
+          s.student_id, 
+          s.name AS student_name, 
+          s.age, 
+          s.grade, 
+          p.parent_id, 
+          p.contact_number, 
+          p.email AS parent_email, 
+          r.rfid_tag_id
+        FROM 
+          Student s
+        LEFT JOIN 
+          Parent p ON s.student_id = p.student_id
+        LEFT JOIN 
+          rfid_card r ON s.student_id = r.student_id;
+      `;
+      
+      const [students] = await db.connection.promise().query(sql);
+      
+      if (students.length === 0) {
+        return res.status(404).json({ message: 'No students found' });
+      }
+  
+      
+      res.json({students,length:students.length});
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+  
   
 }
 

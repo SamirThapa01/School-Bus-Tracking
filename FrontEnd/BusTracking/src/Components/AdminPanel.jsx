@@ -1,75 +1,78 @@
-import React, { useState } from "react";
-import { Home, Users, Bus, Edit, Trash2, Plus, Check, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Home, Users, Bus, Plus } from "lucide-react";
+import axios from "axios";
+import DataTable from "./DataTable";
 import "./Signup.css";
-
-const initialBuses = [
-  {
-    id: 1,
-    number: "BUS-001",
-    route: "North Route",
-    capacity: 45,
-    driver: "John Doe",
-  },
-  {
-    id: 2,
-    number: "BUS-002",
-    route: "South Route",
-    capacity: 40,
-    driver: "Jane Smith",
-  },
-];
-
-const initialStudents = [
-  {
-    id: 1,
-    name: "Alice Johnson",
-    grade: "10th",
-    busNumber: "BUS-001",
-    contact: "123-456-7890",
-    attendance: 'p'
-  },
-  {
-    id: 2,
-    name: "Bob Smith",
-    grade: "9th",
-    busNumber: "BUS-002",
-    contact: "123-456-7891",
-    attendance: 'p'
-  },
-];
 
 function AdminPanel() {
   const [activeTab, setActiveTab] = useState("home");
   const [selectedGrade, setSelectedGrade] = useState("all");
-  const [buses] = useState(initialBuses);
-  const [students, setStudents] = useState(initialStudents);
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({});
+  const [students, setStudents] = useState([]);
+  const [buses, setBuses] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [selectedClassDate, setSelectedClassDate] = useState(""); 
+  const [selectedStatus, setSelectedStatus] = useState("all"); 
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/react/get/Allstudents`);
+        setStudents(response.data.students);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+    fetchStudents();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/react/get/Attendance`);
+        setAttendance(response.data.attendance);
+      } catch (error) {
+        console.error("Error fetching attendance:", error);
+      }
+    };
+    fetchAttendance();
+  }, [activeTab]);
 
   const filteredStudents =
     selectedGrade === "all"
       ? students
       : students.filter((student) => student.grade === selectedGrade);
 
-  const handleEdit = (student) => {
-    setEditingId(student.id);
-    setEditData({ ...student });
-  };
+  const filteredAttendance = attendance.filter((record) => {
+    const classDateMatch = selectedClassDate ? record.classDate === selectedClassDate : true;
+    const statusMatch = selectedStatus !== "all" ? record.status === selectedStatus : true;
+    return classDateMatch && statusMatch;
+  });
 
-  const handleChange = (e, field) => {
-    setEditData({ ...editData, [field]: e.target.value });
-  };
+  const studentColumns = [
+    "Student ID",
+    "Name",
+    "Age",
+    "Grade",
+    "Parent ID",
+    "Contact",
+    "Parent Email",
+    "Rfid"
+  ];
 
-  const handleSave = () => {
-    setStudents(students.map(student => 
-      student.id === editingId ? editData : student
-    ));
-    setEditingId(null);
-  };
+  const attendanceColumns = [
+    "Class Name",
+    "Class Date",
+    "Status",
+    "Student Name",
+  ];
 
-  const handleCancel = () => {
-    setEditingId(null);
-  };
+  const busColumns = [
+    "Bus ID",
+    "Bus Number",
+    "Route",
+    "Capacity",
+    "Driver",
+  ];
 
   return (
     <div className="admin-container">
@@ -93,7 +96,13 @@ function AdminPanel() {
             onClick={() => setActiveTab("students")}
             className={activeTab === "students" ? "active" : ""}
           >
-            <Users /> <span>student</span>
+            <Users /> <span>Students</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("attendance")}
+            className={activeTab === "attendance" ? "active" : ""}
+          >
+            <Users /> <span>Attendance</span>
           </button>
         </nav>
       </aside>
@@ -101,46 +110,8 @@ function AdminPanel() {
       <main className="content">
         {activeTab === "home" && (
           <div className="dashboard">
-            <div className="card">Total Buses: {buses.length}</div>
             <div className="card">Total Students: {students.length}</div>
-          </div>
-        )}
-
-        {activeTab === "buses" && (
-          <div className="management">
-            <h2>Bus Management</h2>
-            <button className="add-button">
-              <Plus /> Add Bus
-            </button>
-            <table>
-              <thead>
-                <tr>
-                  <th>Bus Number</th>
-                  <th>Route</th>
-                  <th>Capacity</th>
-                  <th>Driver</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {buses.map((bus) => (
-                  <tr key={bus.id}>
-                    <td>{bus.number}</td>
-                    <td>{bus.route}</td>
-                    <td>{bus.capacity}</td>
-                    <td>{bus.driver}</td>
-                    <td>
-                      <button className="edit">
-                        <Edit />
-                      </button>
-                      <button className="delete">
-                        <Trash2 />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="card">Total Buses: {buses.length}</div>
           </div>
         )}
 
@@ -174,101 +145,45 @@ function AdminPanel() {
                 </label>
               ))}
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Grade</th>
-                  <th>Rfid</th>
-                  <th>Contact</th>
-                  <th>Attendence</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.map((student) => (
-                  <tr key={student.id}>
-                    <td>
-                      {editingId === student.id ? (
-                        <input
-                          type="text"
-                          value={editData.name}
-                          onChange={(e) => handleChange(e, 'name')}
-                          autoFocus
-                        />
-                      ) : (
-                        student.name
-                      )}
-                    </td>
-                    <td>
-                      {editingId === student.id ? (
-                        <input
-                          type="text"
-                          value={editData.grade}
-                          onChange={(e) => handleChange(e, 'grade')}
-                        />
-                      ) : (
-                        student.grade
-                      )}
-                    </td>
-                    <td>
-                      {editingId === student.id ? (
-                        <input
-                          type="text"
-                          value={editData.busNumber}
-                          onChange={(e) => handleChange(e, 'busNumber')}
-                        />
-                      ) : (
-                        student.busNumber
-                      )}
-                    </td>
-                    <td>
-                      {editingId === student.id ? (
-                        <input
-                          type="text"
-                          value={editData.contact}
-                          onChange={(e) => handleChange(e, 'contact')}
-                        />
-                      ) : (
-                        student.contact
-                      )}
-                    </td>
-                    <td>
-                      {editingId === student.id ? (
-                        <input
-                          type="text"
-                          value={editData.attendance}
-                          onChange={(e) => handleChange(e, 'attendance')}
-                        />
-                      ) : (
-                        student.attendance
-                      )}
-                    </td>
-                    <td>
-                      {editingId === student.id ? (
-                        <>
-                          <button className="save" onClick={handleSave}>
-                            <Check />
-                          </button>
-                          <button className="cancel" onClick={handleCancel}>
-                            <X />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button className="edit" onClick={() => handleEdit(student)}>
-                            <Edit />
-                          </button>
-                          <button className="delete">
-                            <Trash2 />
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <DataTable columns={studentColumns} rows={filteredStudents} />
+          </div>
+        )}
+
+        {activeTab === "buses" && (
+          <div className="management">
+            <h2>Bus Management</h2>
+            <button className="add-button">
+              <Plus /> Add Bus
+            </button>
+            <DataTable columns={busColumns} rows={buses} />
+          </div>
+        )}
+
+        {activeTab === "attendance" && (
+          <div className="management">
+            <h2>Attendance Management</h2>
+            <div className="filters">
+              <label>
+                Class Date:
+                <input
+                  type="date"
+                  value={selectedClassDate}
+                  onChange={(e) => setSelectedClassDate(e.target.value)}
+                />
+              </label>
+              <label>
+                Status:
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="all">All</option>
+                  <option value="present">Present</option>
+                  <option value="absent">Absent</option>
+                </select>
+              </label>
+            </div>
+            <DataTable columns={attendanceColumns} rows={filteredAttendance} />
           </div>
         )}
       </main>
