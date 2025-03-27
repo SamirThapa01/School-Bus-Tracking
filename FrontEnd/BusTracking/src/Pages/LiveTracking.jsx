@@ -6,15 +6,16 @@ import MapContainer from '../Components/MapContainer';
 import Footer from '../Components/Footer';
 import Hero from '../Components/Hero';
 
-function HomePage({ logins, handleLoginClick, login }) {
+function LiveTracking({ logins, handleLoginClick, login }) {
   return (
     <div className="app-container">
       <NavBar handleClick={handleLoginClick} login={login} logins={logins} />
       <div className="main-content">
-        <Hero/>
+        <SideBar/>
+        <MapContainer/>
       </div>
       <Footer/>
     </div>
   );
 }
-export default HomePage;
+export default LiveTracking;

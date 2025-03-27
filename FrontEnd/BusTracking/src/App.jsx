@@ -8,7 +8,7 @@ import {
 } from "react-router-dom";
 import HomePage from "./Pages/HomePage";
 import Login from "./Components/LoginForm";
-import Signup from "./Components/SignUp";
+import Signup from "./Components/signup";
 import Otp from "./Components/Otp";
 import { sendData } from "./Components/Axious";
 import axios from "axios";
@@ -16,6 +16,7 @@ import ProfilePage from "./Pages/ProfilePage";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AdminPanel from "./Components/AdminPanel";
+import LiveTracking from "./Pages/LiveTracking";
 
 const App = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -86,6 +87,18 @@ const App = () => {
             />
           }
         />
+
+        <Route
+          path="/liveTracking"
+          element={
+            <LiveTracking
+              handleLoginClick={handleLoginClick}
+              signupSuccess={signupSuccess}
+              login={login}
+              logins={checkLogin}
+            />
+          }
+        />
         <Route
           path="/profile"
           element={
@@ -98,7 +111,7 @@ const App = () => {
           }
         />
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
-        <Route path="/admin" element={<AdminPanel/>}/>
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
       {showLoginForm && (
         <Login

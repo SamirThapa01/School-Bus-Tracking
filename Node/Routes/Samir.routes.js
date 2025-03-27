@@ -13,6 +13,9 @@ SamirRouter.post("/login",userController.handelLogin);
 SamirRouter.get("/verify",userController.verifyToken,userController.checkAuth);
 SamirRouter.post("/logout",userController.logout);
 SamirRouter.get("/profile",userController.verifyToken,userController.profileData);
+SamirRouter.patch("/update/Profile",userController.verifyToken,userController.updateUserProfile)
+SamirRouter.get("/get/Allstudents",userController.getAllStudents);
+SamirRouter.post("/insert/student",userController.verifyToken,userController.fillStudent);
 
 // Getting user details from database using GET method
 SamirRouter.get("/getAllUsers/:id", userController.getUsers);

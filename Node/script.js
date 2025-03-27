@@ -8,7 +8,7 @@ const { SamirRouter, gpsRouter, rfidRouter } = routes;
 // CORS Options
 const corsOptions = {
   origin: 'http://localhost:5173', 
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST','PATCH'],
   allowedHeaders: ['Content-Type'],
   credentials: true,
 };
