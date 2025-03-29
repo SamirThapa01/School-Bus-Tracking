@@ -1,5 +1,6 @@
 import dbConnector from "../Routes/connection.js";
 import otpGenerator from 'otp-generator'
+import rfidMail from "../rfidMail.js";
 import mailSender from "../mailSender.js";
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
@@ -106,8 +107,6 @@ class UserController {
     }
   }
 
-
-
   async verifyToken(req,res,next){
     try{
       const token = req.cookies.token;
@@ -194,23 +193,168 @@ class UserController {
     }
   }
 
-  async handelRfid(req,res){
+  async handelRfid(req, res) {
     const io = req.io;
-    const { rfid } = req.body;
-    io.emit('rfidData',{text:'hello'});
+    const { rfid, bus_id } = req.body;
 
-    if (rfid !== undefined) {
-      console.log(`Received RFID data: ${rfid}`);
-  
-      // Emit RFID data to all connected clients
-      io.emit('rfidData', { rfid, timestamp: new Date() });
-  
-      res.status(200).json({ message: 'RFID data received successfully' });
-    } else {
-      res.status(400).json({ error: 'Invalid RFID data' });
+    if (!rfid || !bus_id) {
+        return res.status(400).json({ error: 'Invalid RFID data or Bus ID' });
     }
-  }
 
+    console.log(`Received RFID data: ${rfid}, Bus ID: ${bus_id}`);
+
+    try {
+        // Get student information and latest attendance record
+        const query = `
+            SELECT 
+                s.student_id,
+                s.name AS student_name, 
+                p.email, 
+                p.contact_number,
+                a.attendance_id, 
+                a.entry_time,
+                a.exit_time,
+                a.status
+            FROM rfid_card r
+            LEFT JOIN student s ON r.student_id = s.student_id
+            LEFT JOIN parent p ON s.student_id = p.student_id
+            LEFT JOIN attendance a ON s.student_id = a.student_id AND a.bus_id = ?
+            WHERE r.rfid_tag_id = ?
+            ORDER BY a.scan_time DESC LIMIT 1`;
+
+        const [rows] = await db.connection.promise().query(query, [bus_id, rfid]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'RFID not linked to any student' });
+        }
+
+        const { student_id, student_name, email, contact_number, attendance_id, entry_time, exit_time, status } = rows[0];
+        const scan_time = new Date();
+        const currentDate = new Date();
+        
+        // Check if we have a record from today
+        let isNewDay = true;
+        if (entry_time) {
+            const entryDate = new Date(entry_time);
+            isNewDay = 
+                entryDate.getDate() !== currentDate.getDate() || 
+                entryDate.getMonth() !== currentDate.getMonth() || 
+                entryDate.getFullYear() !== currentDate.getFullYear();
+        }
+
+        // Case: New day - create a new entry record regardless of previous status
+        if (isNewDay) {
+            const insertQuery = `
+                INSERT INTO attendance (student_id, bus_id, entry_time, scan_time, status)
+                VALUES (?, ?, ?, ?, 'Entry Recorded')`;
+            
+            const [result] = await db.connection.promise().query(
+                insertQuery, 
+                [student_id, bus_id, scan_time, scan_time]
+            );
+
+            return res.status(200).json({
+                message: 'First scan recorded successfully for today.',
+                student_name,
+                email,
+                contact_number,
+                scan_time,
+                status: 'Entry Recorded'
+            });
+        }
+
+        // Case: First scan of the day
+        if (!entry_time) {
+            const insertQuery = `
+                INSERT INTO attendance (student_id, bus_id, entry_time, scan_time, status)
+                VALUES (?, ?, ?, ?, 'Entry Recorded')`;
+            
+            const [result] = await db.connection.promise().query(
+                insertQuery, 
+                [student_id, bus_id, scan_time, scan_time]
+            );
+            rfidMail(email, student_name, scan_time, "Entry Recorded");
+            return res.status(200).json({
+                message: 'First scan recorded successfully.',
+                student_name,
+                email,
+                contact_number,
+                scan_time,
+                status: 'Entry Recorded'
+            });
+        } 
+
+        // Case: Exit scan already recorded
+        if (exit_time) {
+            return res.status(200).json({
+                message: 'Both entry and exit scans already recorded for today.',
+                student_name,
+                email,
+                contact_number,
+                status
+            });
+        }
+
+        // Case: Second scan - calculate time difference in minutes
+        const timeDifferenceInMinutes = Math.floor((scan_time - new Date(entry_time)) / 60000);
+
+        // If second scan is within valid window (20-60 minutes)
+        if (timeDifferenceInMinutes >= 20 && timeDifferenceInMinutes <= 60) {
+            // Calculate total time (exit_time - entry_time)
+            const total_time = timeDifferenceInMinutes; // in minutes
+
+            const updateQuery = `
+                UPDATE attendance
+                SET exit_time = ?, status = 'Present', total_time = ?
+                WHERE attendance_id = ?`;
+
+            await db.connection.promise().query(updateQuery, [scan_time, total_time, attendance_id]);
+
+            // Notify parent
+            rfidMail(email, student_name, scan_time, "Present");
+
+            // Emit real-time update
+            io.emit('rfidData', { 
+                rfid, 
+                student_name, 
+                email, 
+                contact_number, 
+                scan_time,
+                status: 'Present' 
+            });
+
+            return res.status(200).json({
+                message: 'Second scan recorded successfully, student marked present.',
+                student_name,
+                email,
+                contact_number,
+                scan_time,
+                status: 'Present'
+            });
+        } else if (timeDifferenceInMinutes < 20) {
+            // Second scan too early
+            return res.status(200).json({
+                message: 'Second scan too early. Please scan again after 20 minutes from entry.',
+                student_name,
+                email,
+                contact_number,
+                status: 'Entry Recorded'
+            });
+        } else {
+            // Second scan too late
+            return res.status(200).json({
+                message: 'Second scan too late. Valid window is 20-60 minutes after entry.',
+                student_name,
+                email,
+                contact_number,
+                status: 'Entry Recorded'
+            });
+        }
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
   async handelGps(req,res){
     const io = req.io;
     io.emit('gpsData',{text:'hello'});
@@ -536,9 +680,61 @@ class UserController {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   }
-  
-  
+
+
+ async updateAttendance() {
+    try {
+        
+        const markAbsentQuery = `
+            UPDATE attendance
+            SET status = 'Absent'
+            WHERE DATE(entry_time) = CURDATE() AND exit_time IS NULL;
+        `;
+        await db.connection.promise().query(markAbsentQuery);
+
+        // Mark students as "Missed one time scanning" if they only have an entry scan
+        const markMissedOneTimeQuery = `
+            UPDATE attendance
+            SET status = 'Missed one time scanning'
+            WHERE DATE(entry_time) = CURDATE() AND exit_time IS NULL;
+        `;
+        await db.connection.promise().query(markMissedOneTimeQuery);
+
+        console.log("Attendance updated successfully.");
+    } catch (error) {
+        console.error("Error updating attendance:", error);
+    }
 }
+async  updateAttendance() {
+  try {
+      console.log('Updating attendance records...');
+
+      const markAbsentQuery = `
+          UPDATE attendance 
+          SET status = 'Absent'
+          WHERE status != 'Present' 
+          AND DATE(entry_time) = CURDATE()
+          AND exit_time IS NULL;`;
+
+
+      const markMissedQuery = `
+          UPDATE attendance 
+          SET status = 'Missed one time scanning'
+          WHERE status != 'Present'
+          AND DATE(entry_time) = CURDATE()
+          AND exit_time IS NOT NULL;`;
+
+      await db.connection.promise().query(markAbsentQuery);
+      await db.connection.promise().query(markMissedQuery);
+
+      console.log('Attendance update complete.');
+  } catch (error) {
+      console.error('Error updating attendance:', error);
+  }
+}
+}
+  
+
 
 
 export default UserController;
