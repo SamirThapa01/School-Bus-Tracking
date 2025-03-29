@@ -67,7 +67,7 @@ void loop() {
 
     // Send GPS data to backend
     sendGPSDataToBackend(latitude, longitude);
-    lastGPSSendTime = millis();  // Update the last send time
+    lastGPSSendTime = millis(); 
   }
 
   // RFID Card Scanning

@@ -35,4 +35,5 @@ gpsRouter.post("/",userController.handelGps);
 // Inserting login details in database
 rfidRouter.post("/",userController.handelRfid)
 
+
 export default {SamirRouter,gpsRouter,rfidRouter};

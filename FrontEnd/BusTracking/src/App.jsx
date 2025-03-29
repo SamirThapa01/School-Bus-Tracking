@@ -111,7 +111,17 @@ const App = () => {
           }
         />
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
-        <Route path="/admin" element={<AdminPanel />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminPanel
+              handleLoginClick={handleLoginClick}
+              signupSuccess={signupSuccess}
+              login={login}
+              logins={checkLogin}
+            />
+          }
+        />
       </Routes>
       {showLoginForm && (
         <Login
