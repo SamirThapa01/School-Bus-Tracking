@@ -12,7 +12,7 @@ const MapContainer = () => {
   });
 
   useEffect(() => {
-    const socket = io("http://localhost:8000");
+    const socket = io("http://192.168.1.73:8000");
 
     socket.on("connect", () => {
       console.log("Connected to Socket.IO server");
@@ -27,6 +27,14 @@ const MapContainer = () => {
         latitude: data.latitude ?? 0,
         longitude: data.longitude ?? 0,
       });
+    });
+
+    socket.on("newLocation", (data) => {
+      setLocation({
+        latitude: data.lat ?? 0,
+        longitude: data.long ?? 0,
+      });
+      console.log(data)
     });
 
     socket.on("rfidData", (data) => {

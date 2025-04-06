@@ -13,7 +13,7 @@ class dbConnector {
       connectionLimit: 10,
       queueLimit: 0
     });
-
+    this.promisePool = this.connection.promise();
     this.connect();
   }
 

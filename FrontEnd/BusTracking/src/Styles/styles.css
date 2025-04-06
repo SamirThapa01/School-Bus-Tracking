@@ -196,6 +196,8 @@
     border: none;
     background: none;
     transition: all 0.3s ease;
+    color: black;
+    background: #fff;
 }
 
 .tab.active {
