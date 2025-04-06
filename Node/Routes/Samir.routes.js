@@ -16,7 +16,10 @@ SamirRouter.get("/profile",userController.verifyToken,userController.profileData
 SamirRouter.patch("/update/Profile",userController.verifyToken,userController.updateUserProfile)
 SamirRouter.get("/get/Allstudents",userController.getAllStudents);
 SamirRouter.post("/insert/student",userController.verifyToken,userController.fillStudent);
-
+SamirRouter.post("/admin/insertDetails",userController.adminFillStudent)
+SamirRouter.delete("/admin/delete/:student_id",userController.deleteStudents)
+SamirRouter.get("/admin/attendance",userController.getAttendance)
+SamirRouter.get("/getStudent",userController.verifyToken,userController.getStudentAttendance)
 // Getting user details from database using GET method
 SamirRouter.get("/getAllUsers/:id", userController.getUsers);
 // Getting all users from database using Get Method

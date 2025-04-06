@@ -17,6 +17,9 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AdminPanel from "./Components/AdminPanel";
 import LiveTracking from "./Pages/LiveTracking";
+import UserProfile from "./Components/UserProfile";
+import CreateUser from "./Components/CreateUser";
+import Driver from "./Components/Driver";
 
 const App = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -110,7 +113,10 @@ const App = () => {
             />
           }
         />
+
         <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+        <Route path="/user" element={<CreateUser />} />
+        <Route path="/driver" element={<Driver />}></Route>
         <Route
           path="/admin"
           element={
