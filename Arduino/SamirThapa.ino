@@ -22,8 +22,8 @@ const char* ssid = "HCK Connect";
 const char* password = "#erald77";
 
 // Backend server URL
-const char* serverUrlGPS = "http://192.168.1.73:8000/gps";  // GPS endpoint
-const char* serverUrlRFID = "http://192.168.1.73:8000/rfid";  // RFID endpoint
+const char* serverUrlGPS = "http://192.168.1.73:8000/gps";
+const char* serverUrlRFID = "http://192.168.1.73:8000/rfid"; 
 
 unsigned long lastGPSSendTime = 0;
 unsigned long gpsInterval = 5000;

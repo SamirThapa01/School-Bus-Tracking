@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios"; // Correct import for Axios
+import axios from "axios"; 
 import "./Signup.css";
 
 const CreateUser = ({ modle }) => {
@@ -20,7 +20,7 @@ const CreateUser = ({ modle }) => {
     contact: "",
     email: "",
     rfid: "",
-    password: "", // Add password error field
+    password: "", 
   });
 
   const handleChange = (event) => {
@@ -58,7 +58,7 @@ const CreateUser = ({ modle }) => {
   };
 
   const handleCreate = async () => {
-    // Validate input fields
+   
     if (
       !data.name ||
       !data.age ||
@@ -73,7 +73,7 @@ const CreateUser = ({ modle }) => {
     }
 
     try {
-      // Send the data directly to the API
+    
       const response = await axios.post(
         "http://localhost:8000/react/admin/insertDetails",
         data,
@@ -84,13 +84,13 @@ const CreateUser = ({ modle }) => {
         }
       );
 
-      // Handle the response from the server
+     
       if (response.status === 201) {
         alert("Student created successfully");
         modle();
       }
     } catch (error) {
-      // Handle error from the API request
+    
       console.error("Error creating student:", error);
       alert("An error occurred while creating the student. Please try again.");
     }
@@ -180,7 +180,7 @@ const CreateUser = ({ modle }) => {
           </div>
         </div>
 
-        {/* Password Field */}
+       
         <div className="form-group">
           <label htmlFor="password">Password:</label>
           <input

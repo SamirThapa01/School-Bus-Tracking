@@ -13,6 +13,7 @@
   "dependencies": {
     "@serialport/parser-readline": "^12.0.0",
     "@types/node": "^20.14.10",
+    "axios": "^1.8.4",
     "bcryptjs": "^3.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -21,6 +22,7 @@
     "geolib": "^3.3.4",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.12.0",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.10.0",
     "otp-generator": "^4.0.1",
     "serialport": "^12.0.0",

@@ -41,9 +41,9 @@ function Profile() {
           response.data.message ===
           "Student data is missing. Please fill in student details."
         ) {
-          setIsStudentMissing(true); // Set the state to show the form for filling student details
+          setIsStudentMissing(true); 
         } else {
-          const profile = response.data; // Get the profile data
+          const profile = response.data; 
 
           // Set profile data into state
           setProfileData({
