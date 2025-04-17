@@ -5,6 +5,7 @@ import mailSender from "../mailSender.js";
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 import dotenv from "dotenv";
+import EmergencyMail from "../EmergencyMail.js";
 dotenv.config();
 const db = new dbConnector();
 const otpData = {};
@@ -65,30 +66,63 @@ class UserController {
       return res.status(500).json({ success: false, message: "Internal server error" });
     }
   }
+
+  
+  async updateStudentDetails(req, res) {
+    try {
+      const { student_id } = req.params;
+      const { name, age, grade, rfid, contact, email } = req.body;
+      if (!student_id || !name || !age || !grade || !rfid || !contact || !email) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+  
+      const updateStudentQuery = `
+        UPDATE Student
+        SET name = ?, age = ?, grade = ?
+        WHERE student_id = ?;
+      `;
+      await db.connection.promise().query(updateStudentQuery, [name, age, grade, student_id]);
+  
+      const updateRFIDQuery = `
+        UPDATE rfid_card
+        SET rfid_tag_id = ?
+        WHERE student_id = ?;
+      `;
+      await db.connection.promise().query(updateRFIDQuery, [rfid, student_id]);
+  
+      const updateParentQuery = `
+        UPDATE Parent
+        SET contact_number = ?, email = ?
+        WHERE student_id = ?;
+      `;
+      await db.connection.promise().query(updateParentQuery, [contact, email, student_id]);
+  
+      res.status(200).json({ message: 'Student details updated successfully' });
+    } catch (error) {
+      console.error("Error updating student:", error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
   
   async adminFillStudent(req, res) {
     try {
-      // Extract student and parent details from the request body
       const { name, age, grade, rfid, password, contact, email } = req.body;
   
-      // Validate required fields
       if (!name || !age || !grade || !rfid || !password || !contact || !email) {
         return res.status(400).json({ message: 'All fields are required' });
       }
   
-      // Check if the email already exists in the Parent table
+
       const [existingParent] = await db.connection.promise().query('SELECT * FROM Parent WHERE email = ?', [email]);
   
-      // If email already exists, return an error response
       if (existingParent.length > 0) {
         return res.status(400).json({ message: 'Parent with this email already exists' });
       }
   
-      // Hash password for parent
+
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
   
-      // Insert parent data into the Parent table
       const parentInsertQuery = `
         INSERT INTO Parent (email, contact_number, password)
         VALUES (?, ?, ?);
@@ -140,6 +174,50 @@ class UserController {
       res.status(500).json({ message: 'Internal Server Error' });
     }
   }
+
+
+  async deleteBus(req, res) {
+    try {
+      const { bus_id } = req.params;
+      console.log(bus_id);
+  
+      const deleteQuery = "DELETE FROM Bus WHERE bus_id = ?";
+      const [result] = await db.connection.promise().query(deleteQuery, [bus_id]);
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success:false, message: "Bus not found" });
+      }
+  
+      res.status(200).json({ success:true, message: "Bus deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting bus:", error);
+      res.status(500).json({ success:false, message: "Internal Server Error" });
+    }
+  }
+  
+  async insertBus(req, res) {
+    try {
+      const { busNumber, driver, capacity } = req.body;
+      console.log(busNumber, driver, capacity);
+  
+      if (!busNumber || !driver || !capacity) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+  
+      const insertQuery = `
+        INSERT INTO Bus (bus_number, driver_name, capacity)
+        VALUES (?, ?, ?)
+      `;
+  
+      await db.connection.promise().query(insertQuery, [busNumber, driver, capacity]);
+      res.status(201).json({ message: "Bus inserted successfully" });
+  
+    } catch (error) {
+      console.error("Error inserting bus:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+  
 
  
     async getAttendance(req, res) {
@@ -476,7 +554,6 @@ async deleteStudents(req, res){
             const timeDifferenceInMinutes = Math.floor((scan_time - new Date(entry_time)) / 60000);
 
             if (timeDifferenceInMinutes >= 20 && timeDifferenceInMinutes <= 60) {
-                // Update attendance with exit_time and mark as "Present"
                 const total_time = timeDifferenceInMinutes;
 
                 const updateQuery = `
@@ -821,6 +898,63 @@ async deleteStudents(req, res){
         }
   }
 
+  async adminAttendenceUpdate(req, res) {
+    const { student_id, Attendance_id } = req.params;
+    const { status } = req.body;
+    console.log(status);
+  
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Attendance status is required',
+      });
+    }
+  
+    try {
+      // Query to update the attendance status
+      const [results] = await db.connection.promise().query(
+        `
+        UPDATE attendance
+        SET status = ?
+        WHERE student_id = ? AND attendance_id = ?;
+        `,
+        [status, student_id, Attendance_id]  
+      );
+  
+    
+      if (results.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Attendance record not found',
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Attendance updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating attendance:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update attendance status',
+      });
+    }
+  }
+  
+
+  async adminGetAllBus(req, res) {
+    try {
+      const query = "SELECT * FROM Bus";
+      const [rows] = await db.connection.promise().query(query);
+      console.log(rows);
+      res.status(200).json({buses:rows});
+    } catch (error) {
+      console.error("Error fetching buses:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+  
 
   async getAllStudents(req, res) {
     try {
@@ -880,6 +1014,69 @@ async deleteStudents(req, res){
         console.error("Error updating attendance:", error);
     }
 }
+
+
+async abc(){
+  console.log("Scheduler just called me");
+}
+
+async emergencyAlert(req, res) {
+  console.log("from the api", req.body.data);
+
+  const { type, location } = req.body.data;
+  const { lat, long } = location;
+
+  const alert = `Emergency Alert: ${type} at location (Lat: ${lat}, Long: ${long})`;
+
+  try {
+    const [rows] = await db.connection.promise().query(`
+      SELECT email FROM parent
+    `);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "No parent emails found." });
+    }
+
+    rows.forEach(row => {
+      EmergencyMail(row.email, alert);
+    });
+
+    res.status(200).json({ message: "Emergency alerts sent to all parents." });
+  } catch (error) {
+    console.error("Error sending emergency alerts:", error);
+    res.status(500).json({ message: "Failed to send emergency alerts." });
+  }
+}
+
+async emergencyMessage(req, res) {
+  console.log("from the api - emergency message", req.body.data);
+
+  const { message, location } = req.body.data;
+  const { lat, long } = location;
+
+  const alertMessage = `Bus Update: "${message}" at location (Lat: ${lat}, Long: ${long})`;
+
+  try {
+    const [rows] = await db.connection.promise().query(`
+      SELECT email FROM parent
+    `);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "No parent emails found." });
+    }
+
+    rows.forEach(row => {
+      EmergencyMail(row.email, alertMessage);
+    });
+
+    res.status(200).json({ message: "Emergency messages sent to all parents." });
+  } catch (error) {
+    console.error("Error sending emergency messages:", error);
+    res.status(500).json({ message: "Failed to send emergency messages." });
+  }
+}
+
+
 async  updateAttendance() {
   try {
       console.log('Updating attendance records...');

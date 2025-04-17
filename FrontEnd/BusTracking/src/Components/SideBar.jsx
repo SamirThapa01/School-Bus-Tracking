@@ -1,5 +1,5 @@
 import BusCard from "./BusCard";
-const SideBar = ({ setActiveTab, activeTab }) => {
+const SideBar = ({ setActiveTab, activeTab,locationData }) => {
   const busData = [
     {
       id: "1",
@@ -39,7 +39,7 @@ const SideBar = ({ setActiveTab, activeTab }) => {
 
       <div>
         {busData.map((bus) => (
-          <BusCard key={bus.id} bus={bus} />
+          <BusCard key={bus.id} bus={bus} locationData={locationData} />
         ))}
       </div>
     </div>

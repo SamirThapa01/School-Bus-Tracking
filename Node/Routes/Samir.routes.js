@@ -17,9 +17,15 @@ SamirRouter.patch("/update/Profile",userController.verifyToken,userController.up
 SamirRouter.get("/get/Allstudents",userController.getAllStudents);
 SamirRouter.post("/insert/student",userController.verifyToken,userController.fillStudent);
 SamirRouter.post("/admin/insertDetails",userController.adminFillStudent)
+SamirRouter.patch("/admin/updateStudent/:student_id",userController.updateStudentDetails);
+SamirRouter.put("/admin/updateAttendance/:student_id/:Attendance_id",userController.adminAttendenceUpdate)
+SamirRouter.get("/admin/getAllBus",userController.adminGetAllBus);
 SamirRouter.delete("/admin/delete/:student_id",userController.deleteStudents)
 SamirRouter.get("/admin/attendance",userController.getAttendance)
+SamirRouter.post("/admin/insertBus",userController.insertBus);
+SamirRouter.delete("/admin/deleteBus/:bus_id",userController.deleteBus);
 SamirRouter.get("/getStudent",userController.verifyToken,userController.getStudentAttendance)
+SamirRouter.get("/call",userController.abc);
 // Getting user details from database using GET method
 SamirRouter.get("/getAllUsers/:id", userController.getUsers);
 // Getting all users from database using Get Method
@@ -29,7 +35,9 @@ SamirRouter.put("/update/:id",userController.updateUser );
 // deleting from data base using DELETE method
 SamirRouter.delete("/delete/:id",userController.deleteUser);
 
-
+//emergency api
+SamirRouter.post("/emergency",userController.emergencyAlert);
+SamirRouter.post("/emergency-message",userController.emergencyMessage);
 // ---Gps routes---
 // Receiving Gps coordinates from IOT
 gpsRouter.post("/",userController.handelGps);

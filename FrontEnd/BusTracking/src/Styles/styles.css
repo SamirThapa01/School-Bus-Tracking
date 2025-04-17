@@ -351,27 +351,43 @@ li:hover {
 
 /* Weather Widget Styles */
 .weather-widget {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    z-index: 999;
+  font-family: Arial, Helvetica, sans-serif;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 999;
+  width: 220px;
+  height: 80px;
 }
 
 .weather-temp {
-    font-weight: 600;
-    font-size: 16px;
+  font-weight: 600;
+  font-size: 18px;
+  color: #333;
 }
 
 .weather-desc {
-    font-size: 13px;
-    color: #6b7280;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.weather-icon-container {
+  width: 40px;
+  height: 40px;
+}
+
+.weather-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* Map Controls Styles */

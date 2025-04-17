@@ -1157,3 +1157,184 @@ th {
   cursor: not-allowed;
 }
 
+
+/* data table*/
+/* DataTable Container */
+.data-table-container {
+  width: 100%;
+  overflow-x: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: #fff;
+  margin-bottom: 2rem;
+}
+
+/* Table Styling */
+.data-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #333;
+  table-layout: auto;
+}
+
+/* Table Header */
+.data-table-container thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.data-table-container th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #495057;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background-color: #f8f9fa;
+  z-index: 10;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Table Body */
+.data-table-container tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.data-table-container tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+.data-table-container td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+/* Actions Column */
+.data-table-container td:last-child {
+  white-space: nowrap;
+  text-align: right;
+  min-width: 100px;
+}
+
+/* Button Styling */
+.data-table-container button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #6c757d;
+}
+
+.data-table-container button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.data-table-container button.edit {
+  color: #4f46e5;
+}
+
+.data-table-container button.delete {
+  color: #ef4444;
+}
+
+.data-table-container button.edit:hover {
+  background-color: rgba(79, 70, 229, 0.1);
+}
+
+.data-table-container button.delete:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Empty State */
+.data-table-container tbody tr.empty-row td {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .data-table-container th,
+  .data-table-container td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .data-table-container th {
+    font-size: 0.8rem;
+  }
+}
+
+/* If you need zebra striping */
+.data-table-container tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.data-table-container tbody tr:nth-child(even):hover {
+  background-color: #f1f5f9;
+}
+
+/* Animation for row actions */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.data-table-container button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Optional: Style for specific columns if needed */
+.data-table-container td.status-column {
+  position: relative;
+}
+
+.data-table-container .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.data-table-container .status-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.data-table-container .status-inactive {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Pagination styles if you add pagination later */
+.data-table-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+/* Loading state */
+.data-table-loading {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+}
