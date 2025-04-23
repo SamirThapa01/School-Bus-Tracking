@@ -8,6 +8,7 @@ import {
 import { sendData } from "./Axious";
 import { IoMdNotifications } from "react-icons/io";
 import { Navigate, useNavigate } from "react-router-dom";
+import configFile from "../Config/ApiConfig";
 
 const options = [
   { name: "Profile", icon: <FaUser /> },
@@ -25,7 +26,7 @@ function Options({ logins, setShow }) {
     if (selectedMenu === "Logout") {
       try {
         const [response, error] = await sendData(
-          "http://localhost:8000/react/logout",
+          `${configFile.apiUrl}/react/logout`,
           {}
         );
 
@@ -55,7 +56,7 @@ function Options({ logins, setShow }) {
   };
 
   return (
-    <div className="box_container" style={{height:"auto"}}>
+    <div className="box_container" style={{ height: "auto" }}>
       <ul>
         {options.map((item, index) => (
           <li key={index} onClick={handleClick}>

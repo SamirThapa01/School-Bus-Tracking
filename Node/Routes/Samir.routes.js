@@ -1,5 +1,6 @@
 import express from "express";
 import UserController from "../Controllers/Users.controller.js";
+import upload from "../Multer/Multer.js";
 const userController = new UserController();
 const SamirRouter = express.Router();
 const gpsRouter = express.Router();
@@ -26,6 +27,7 @@ SamirRouter.post("/admin/insertBus",userController.insertBus);
 SamirRouter.delete("/admin/deleteBus/:bus_id",userController.deleteBus);
 SamirRouter.get("/getStudent",userController.verifyToken,userController.getStudentAttendance)
 SamirRouter.get("/call",userController.abc);
+SamirRouter.post('/upload', upload.single('file'),userController.uploadFile);
 // Getting user details from database using GET method
 SamirRouter.get("/getAllUsers/:id", userController.getUsers);
 // Getting all users from database using Get Method
@@ -34,12 +36,13 @@ SamirRouter.get("/getAllUsers",userController.getUserData);
 SamirRouter.put("/update/:id",userController.updateUser );
 // deleting from data base using DELETE method
 SamirRouter.delete("/delete/:id",userController.deleteUser);
-
+// backend call
+SamirRouter.patch("/update/attendance",userController.updateAttendance);
 //emergency api
 SamirRouter.post("/emergency",userController.emergencyAlert);
 SamirRouter.post("/emergency-message",userController.emergencyMessage);
 // ---Gps routes---
-// Receiving Gps coordinates from IOT
+// Receiving Gps coordinates 
 gpsRouter.post("/",userController.handelGps);
 
 // ---Rfid routes---

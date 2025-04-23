@@ -8,7 +8,7 @@ import {
 } from "react-router-dom";
 import HomePage from "./Pages/HomePage";
 import Login from "./Components/LoginForm";
-import Signup from "./Components/signup";
+import Signup from "./Components/SignUp";
 import Otp from "./Components/Otp";
 import { sendData } from "./Components/Axious";
 import axios from "axios";
@@ -20,6 +20,7 @@ import LiveTracking from "./Pages/LiveTracking";
 import UserProfile from "./Components/UserProfile";
 import CreateUser from "./Components/CreateUser";
 import Driver from "./Components/Driver";
+import configFile from "./Config/ApiConfig";
 
 const App = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -32,8 +33,8 @@ const App = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        const response = await axios.get("http://localhost:8000/react/verify", {
+      try {                             
+        const response = await axios.get(`${configFile.apiUrl}/react/verify`, {
           withCredentials: true,
         });
         console.log(response);

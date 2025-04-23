@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './Signup.css'; 
+import configFile from '../Config/ApiConfig';
 
 const Attendance = () => {
   const [attendanceData, setAttendanceData] = useState([]);
@@ -12,9 +13,9 @@ const Attendance = () => {
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/react/getStudent', {
+        const response = await axios.get( `${configFile.apiUrl}/react/getStudent`, {
           withCredentials: true,
-        });
+        }); 
 
         const data = response.data.studentData || [];
         setAttendanceData(data);

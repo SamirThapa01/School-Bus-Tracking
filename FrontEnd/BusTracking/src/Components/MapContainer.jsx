@@ -3,6 +3,7 @@ import io from "socket.io-client";
 import Map from "./Map";
 import Updates from "./Updates";
 import WeatherBox from "./WeatherBox";
+import configFile from "../Config/ApiConfig";
 
 const MapContainer = ({ setGetLocation, city }) => {
   const [rfid, setRfid] = useState(null);
@@ -14,8 +15,7 @@ const MapContainer = ({ setGetLocation, city }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    // Initialize Socket.IO connection
-    const socketConnection = io("http://172.27.192.1:8000");
+    const socketConnection = io(`${configFile.socketioUrl}`);
     setSocket(socketConnection);
 
     socketConnection.on("connect", () => {
@@ -25,7 +25,6 @@ const MapContainer = ({ setGetLocation, city }) => {
     socketConnection.on("connect_error", (err) => {
       console.error("Connection error:", err);
     });
-
 
     socketConnection.on("gpsData", (data) => {
       setLocation({
@@ -37,7 +36,6 @@ const MapContainer = ({ setGetLocation, city }) => {
         longitude: data.longitude ?? 0,
       });
     });
-
 
     socketConnection.on("newLocation", (data) => {
       setLocation({
@@ -87,15 +85,12 @@ const MapContainer = ({ setGetLocation, city }) => {
     };
   }, []);
 
-
   const addAlert = (alert) => {
     setEmergencyAlerts((prevAlerts) => {
       const newAlerts = [alert, ...prevAlerts];
       return newAlerts.slice(0, 10);
     });
   };
-
-
 
   return (
     <div className="map-container">

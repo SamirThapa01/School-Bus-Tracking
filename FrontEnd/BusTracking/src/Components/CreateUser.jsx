@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios"; 
 import "./Signup.css";
+import configFile from "../Config/ApiConfig";
 
 const CreateUser = ({ modle }) => {
   const [data, setData] = useState({
@@ -75,7 +76,7 @@ const CreateUser = ({ modle }) => {
     try {
     
       const response = await axios.post(
-        "http://localhost:8000/react/admin/insertDetails",
+        `${configFile.apiUrl}/react/admin/insertDetails`,
         data,
         {
           headers: {

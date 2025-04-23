@@ -5,6 +5,7 @@ import Profile from "./Profile";
 import axios from "axios";
 import EditUser from "./EditUser";
 import "./Signup.css";
+import configFile from "../Config/ApiConfig";
 
 function DataTable({
   columns,
@@ -37,7 +38,7 @@ function DataTable({
       if (activeTab === "students") {
         try {
           const response = await axios.delete(
-            `http://localhost:8000/react/admin/delete/${row.student_id}`
+            `${configFile.apiUrl}/react/admin/delete/${row.student_id}`
           );
 
           if (response.data.success) {
@@ -66,7 +67,7 @@ function DataTable({
         console.log("Deleting bus with ID:", row.bus_id);
         try {
           const response = await axios.delete(
-            `http://localhost:8000/react/admin/deleteBus/${row.bus_id}`
+            `${configFile.apiUrl}/react/admin/deleteBus/${row.bus_id}`
           );
 
           if (response.data.success) {

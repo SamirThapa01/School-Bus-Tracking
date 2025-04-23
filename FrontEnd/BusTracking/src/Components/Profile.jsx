@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./Signup.css";
 import axios from "axios";
+import configFile from "../Config/ApiConfig";
 
 function Profile() {
   const [profileData, setProfileData] = useState({
@@ -28,22 +29,23 @@ function Profile() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:8000/react/profile",
-          {
-            withCredentials: true,
-          }
-        );
-        console.log("API response:", response.data); // Log the response for debugging
+        const response = await axios.get(`${configFile.apiUrl}/react/profile`, {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        console.log("API response:", response.data);
+        console.log("Profile data:", response.data.message);
 
         // Check if the API response contains a message indicating missing student data
         if (
           response.data.message ===
           "Student data is missing. Please fill in student details."
         ) {
-          setIsStudentMissing(true); 
+          setIsStudentMissing(true);
         } else {
-          const profile = response.data; 
+          const profile = response.data;
 
           // Set profile data into state
           setProfileData({
@@ -69,7 +71,7 @@ function Profile() {
   const handleSave = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:8000/react/insert/student",
+        `${configFile.apiUrl}/react/insert/student`,
         profileData,
         {
           withCredentials: true,

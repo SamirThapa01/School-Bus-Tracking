@@ -3,8 +3,6 @@ const SideBar = ({ setActiveTab, activeTab,locationData }) => {
   const busData = [
     {
       id: "1",
-      status: "Running",
-      route: "Mulpani-sunkhu",
       driver: "lalit kumar",
       location: "sankhu",
       students: "1/30",

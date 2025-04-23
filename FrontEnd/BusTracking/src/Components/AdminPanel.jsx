@@ -6,6 +6,7 @@ import StudentManagement from "./StudentManagement";
 import BusManagement from "./BusManagement";
 import AttendanceManagement from "./AttendanceManagement";
 import "./Signup.css";
+import configFile from "../Config/ApiConfig";
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -29,27 +30,27 @@ const AdminPanel = () => {
       try {
         if (activeTab === "students") {
           const studentResponse = await axios.get(
-            "http://localhost:8000/react/get/Allstudents"
+            `${configFile.apiUrl}/react/get/Allstudents`
           );
           setStudents(studentResponse.data.students);
         } else if (activeTab === "buses") {
           const busResponse = await axios.get(
-            "http://localhost:8000/react/admin/getAllBus"
+            `${configFile.apiUrl}/react/admin/getAllBus`
           );
           setBuses(busResponse.data.buses);
         } else if (activeTab === "attendance") {
           const attendanceResponse = await axios.get(
-            "http://localhost:8000/react/admin/attendance"
+            `${configFile.apiUrl}/react/admin/attendance`
           );
           setAttendance(attendanceResponse.data.data);
         } else if (activeTab === "parents") {
           const parentResponse = await axios.get(
-            "http://localhost:8000/react/get/AllParents"
+            `${configFile.apiUrl}/react/get/AllParents`
           );
           setParents(parentResponse.data.parents);
         } else if (activeTab === "others") {
           const otherResponse = await axios.get(
-            "http://localhost:8000/react/get/AllOthers"
+            `${configFile.apiUrl}/react/get/AllOthers`
           );
           setOthers(otherResponse.data.others);
         }

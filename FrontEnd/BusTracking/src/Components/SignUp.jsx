@@ -5,6 +5,7 @@ import { IoEyeOutline } from "react-icons/io5";
 import { FaRegEyeSlash } from "react-icons/fa";
 import Google from "./Google";
 import { sendData } from "./Axious";
+import configFile from "../Config/ApiConfig";
 
 const Signup = ({ onCloseSignup, onCloseLogin, onOtp }) => {
   const [inputs, setInputs] = useState({
@@ -134,7 +135,7 @@ const Signup = ({ onCloseSignup, onCloseLogin, onOtp }) => {
     try {
       localStorage.setItem("signupData", JSON.stringify(inputs));
       const [response, error] = await sendData(
-        "http://localhost:8000/react/requestOtp",
+        `${configFile.apiUrl}/react/requestOtp`,
         { email: inputs.email }
       );
 
