@@ -6,6 +6,8 @@ import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 import dotenv from "dotenv";
 import EmergencyMail from "../EmergencyMail.js";
+import geolib from 'geolib';
+import checkGeofence from "../CheckGeofence.js";
 dotenv.config();
 const db = new dbConnector();
 const otpData = {};
@@ -29,36 +31,34 @@ class UserController {
   
   async addUser(req, res) {
     try {
-      const { email, contact, password } = req.body;
+      const { email, phoneNumber, password } = req.body;
       console.log(email);
-      // Validate required fields
-      if (!email || !contact || !password) {
+  
+      if (!email || !phoneNumber || !password) {
         return res.status(400).json({ success: false, message: "All fields are required" });
       }
   
-      // Check if the user already exists
-      const [result] = await db.connection.promise().query("SELECT * FROM parent WHERE email = ?", [email]);
-      
+      const [result] = await db.connection.promise().query(
+        "SELECT * FROM parent WHERE email = ?",
+        [email]
+      );
   
       if (result.length > 0) {
         return res.status(400).json({ success: false, message: "User already exists" });
       }
   
-      // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
   
-      // Insert user into the database
+      // Insert user with default role 'user'
       await db.connection.promise().query(
-        "INSERT INTO parent (email, contact_number , password,is_student_linked,student_id) VALUES (?, ?, ?, ?, ?)",
-        [email, contact, hashedPassword,0,null]
+        "INSERT INTO parent (email, contact_number, password, is_student_linked, student_id, role) VALUES (?, ?, ?, ?, ?, ?)",
+        [email, phoneNumber, hashedPassword, 0, null, 'user']
       );
   
-      // Generate JWT token
-      const token = jwt.sign({ email }, process.env.SecretKey);
+      const token = jwt.sign({ email, role: 'user' }, process.env.SecretKey);
   
-      // Set token in cookie
-      res.cookie("token", token, { httpOnly: true, sameSite: 'strict'});
+      res.cookie("token", token, { httpOnly: true, sameSite: 'strict' });
   
       return res.status(201).json({ success: true, message: "User registered successfully", token });
     } catch (error) {
@@ -66,7 +66,7 @@ class UserController {
       return res.status(500).json({ success: false, message: "Internal server error" });
     }
   }
-
+  
   
   async updateStudentDetails(req, res) {
     try {
@@ -112,22 +112,21 @@ class UserController {
         return res.status(400).json({ message: 'All fields are required' });
       }
   
-
       const [existingParent] = await db.connection.promise().query('SELECT * FROM Parent WHERE email = ?', [email]);
   
       if (existingParent.length > 0) {
         return res.status(400).json({ message: 'Parent with this email already exists' });
       }
   
-
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
   
+      // Insert parent data into the Parent table with role as 'user'
       const parentInsertQuery = `
-        INSERT INTO Parent (email, contact_number, password)
-        VALUES (?, ?, ?);
+        INSERT INTO Parent (email, contact_number, password, role)
+        VALUES (?, ?, ?, ?);
       `;
-      const [parentInsertResult] = await db.connection.promise().query(parentInsertQuery, [email, contact, hashedPassword]);
+      const [parentInsertResult] = await db.connection.promise().query(parentInsertQuery, [email, contact, hashedPassword, 'user']); // Set default role 'user'
   
       // Get parent_id from the inserted parent record
       const parentId = parentInsertResult.insertId;
@@ -167,13 +166,13 @@ class UserController {
         return res.status(500).json({ message: 'Error updating parent record with student ID' });
       }
   
-      // Respond with a success message
       res.status(201).json({ message: 'Student data added, RFID tag inserted, and parent record updated successfully' });
     } catch (error) {
       console.error("Error adding student:", error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   }
+  
 
 
   async deleteBus(req, res) {
@@ -340,34 +339,46 @@ async deleteStudents(req, res){
 }
 
   
-   async handelLogin(req,res){
-     try{
+async handelLogin(req, res) {
+  try {
+    const { email, password } = req.body;
 
-      const {email, password} = req.body;
-      if(!email || !password){
-      return res.status(400).json({success:false,message:"Fields are required"});
-      }
-      const [result] = await db.connection.promise().query("SELECT * FROM parent where email = ?",[email]);
-      if(result.length === 0){
-       return res.status(400).json({success:false, message:'user not found'})
-      }
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Fields are required" });
+    }
 
-      const user = result[0];
-      const match = await bcrypt.compare(password,user.password);
-      if(!match){
-        return res.status(401).json({success:false,message:"password is not correct"});
-      }
-      
-      const token = jwt.sign({email},process.env.SecretKey);
-      console.log('Created token:', token);
-      res.cookie("token", token, { httpOnly: true, sameSite: 'strict'});
-      return  res.status(200).json({success:true, message:'user login in success'});
+    const [result] = await db.connection.promise().query(
+      "SELECT * FROM parent WHERE email = ?",
+      [email]
+    );
 
-     }catch(err){
-      console.error("Error login in user");
-      res.status(500).json({success:false, message:"internal server error"})
-     }
+    if (result.length === 0) {
+      return res.status(400).json({ success: false, message: "User not found" });
+    }
+
+    const user = result[0];
+
+    // Check if password matches
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ success: false, message: "Password is not correct" });
+    }
+
+    const token = jwt.sign(
+      { email, role: user.role }, 
+      process.env.SecretKey
+    );
+
+    console.log('Created token:', token)
+    res.cookie("token", token, { httpOnly: true, sameSite: 'strict' });
+
+    return res.status(200).json({ success: true, message: "User logged in successfully" });
+  } catch (err) {
+    console.error("Error logging in user:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
+}
+
 
   async checkAuth(req,res){
     try{
@@ -470,7 +481,7 @@ async deleteStudents(req, res){
   async  handelRfid(req, res) {
     const io = req.io;
     const { rfid, bus_id } = req.body;
-
+    console.log("From rfid",rfid, bus_id);
     if (!rfid || !bus_id) {
         return res.status(400).json({ error: 'Invalid RFID data or Bus ID' });
     }
@@ -478,7 +489,7 @@ async deleteStudents(req, res){
     console.log(`Received RFID data: ${rfid}, Bus ID: ${bus_id}`);
 
     try {
-        // Get student information and latest attendance record
+      
         const query = `
             SELECT 
                 s.student_id,
@@ -506,7 +517,6 @@ async deleteStudents(req, res){
         const scan_time = new Date();
         const currentDate = new Date();
 
-        // Check if attendance is from today
         let isNewDay = true;
         if (entry_time) {
             const entryDate = new Date(entry_time);
@@ -524,7 +534,6 @@ async deleteStudents(req, res){
 
             const [result] = await db.connection.promise().query(insertQuery, [student_id, bus_id, scan_time, scan_time]);
 
-            // Send email notification
             rfidMail(email, student_name, scan_time, "Entry Recorded");
 
             return res.status(200).json({
@@ -553,7 +562,7 @@ async deleteStudents(req, res){
         if (entry_time && !exit_time) {
             const timeDifferenceInMinutes = Math.floor((scan_time - new Date(entry_time)) / 60000);
 
-            if (timeDifferenceInMinutes >= 20 && timeDifferenceInMinutes <= 60) {
+            if (timeDifferenceInMinutes >= 2 && timeDifferenceInMinutes <= 60) {
                 const total_time = timeDifferenceInMinutes;
 
                 const updateQuery = `
@@ -607,24 +616,47 @@ async deleteStudents(req, res){
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
-  async handelGps(req,res){
-    const io = req.io;
-    io.emit('gpsData',{text:'hello'});
-      let latestGPSData = null;
-      const { latitude, longitude } = req.body;
-    
-      if (latitude !== undefined && longitude !== undefined) {
-        latestGPSData = { latitude, longitude, timestamp: new Date() };
-        console.log(`Received GPS data - Latitude: ${latitude}, Longitude: ${longitude}`);
-    
-        // Emit GPS data to all connected clients
-        io.emit('gpsData', latestGPSData);
-    
-        res.status(200).json({ message: 'GPS data received successfully' });
-      } else {
-        res.status(400).json({ error: 'Invalid GPS data' });
+async handelGps(req, res) {
+  const io = req.io;
+  const { latitude, longitude } = req.body;
+  console.log("From handel gps",latitude, longitude);
+  console.log("Received GPS data (POST):", req.body);
+
+  const isInsideCircle = checkGeofence(latitude, longitude);
+
+  if (latitude !== undefined && longitude !== undefined) {
+    const latestGPSData = {
+      latitude,
+      longitude,
+      timestamp: new Date()
+    };
+
+    io.emit('gpsData', latestGPSData);
+
+    if (!isInsideCircle) {
+      const alert = `Alert: The bus is outside the geofence at location (Lat: ${latitude}, Long: ${longitude})`;
+
+      try {
+        const [rows] = await db.connection.promise().query(`
+          SELECT email FROM parent
+        `);
+
+        rows.forEach(row => {
+          EmergencyMail(row.email, alert);
+        });
+
+      } catch (error) {
+        console.error("Error sending geofence alert emails:", error);
       }
+    }
+
+    res.status(200).json({ message: 'GPS data received and processed.' });
+  } else {
+    res.status(400).json({ error: 'Invalid GPS data.' });
   }
+}
+
+
 
   async checkOpt(req,res){
       const {email ,otp} = req.body;
@@ -653,7 +685,6 @@ async deleteStudents(req, res){
       const email = req.user.email;
       console.log(email);
   
-      // SQL query to fetch parent data first
       const parentSql = `
         SELECT 
           p.parent_id,
@@ -668,7 +699,6 @@ async deleteStudents(req, res){
           p.email = ?;
       `;
   
-      // Execute the query to fetch parent and student data
       const [parentResult] = await db.connection.promise().query(parentSql, [email]);
       console.log(parentResult);
   
@@ -681,7 +711,7 @@ async deleteStudents(req, res){
   
       // Check if student_id is null or empty (i.e., student data is missing)
       if (!parentData.student_id) {
-        return res.status(200).json({ message: 'Student data is missing. Please fill in student details.' });
+        return res.status(200).json({ message: 'Student data is missing. Please fill in student details.' , success:false});
       }
   
       // If student data exists, fetch detailed student and parent data
@@ -706,8 +736,6 @@ async deleteStudents(req, res){
       `;
   
       const [studentResult] = await db.connection.promise().query(sql, [parentData.student_id]);
-  
-      // If student data is found, return the profile data
       if (studentResult.length === 0) {
         return res.status(404).json({ message: 'No student data found for this parent' });
       }
@@ -724,15 +752,16 @@ async deleteStudents(req, res){
     if (!req.user) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
-  
     try {
-      const email = req.user.email; // Assuming `email` is part of `req.user`
+      const email = req.user.email; 
+      console.log(email);
+      console.log(req.body)
   
       // Extract student details from the request body
-      const { name, age, grade, rfid } = req.body;
+      const { studentName, studentAge, studentGrade, studentRfidTag } = req.body;
   
       // Validate that the student details and RFID tag are provided
-      if (!name || !age || !grade || !rfid) {
+      if (!studentName || !studentGrade || !studentAge || !studentRfidTag) {
         return res.status(400).json({ message: 'All student fields (name, age, grade, RFID tag) are required' });
       }
   
@@ -747,7 +776,7 @@ async deleteStudents(req, res){
         return res.status(404).json({ message: 'Parent not found' });
       }
   
-      const parentId = parentResult[0].parent_id; // Get parent_id from the query result
+      const parentId = parentResult[0].parent_id; 
   
       // SQL query to insert the new student into the Student table
       const studentQuery = `
@@ -756,7 +785,7 @@ async deleteStudents(req, res){
       `;
       
       // Execute the query to insert student data
-      const [studentResult] = await db.connection.promise().query(studentQuery, [name, age, grade]);
+      const [studentResult] = await db.connection.promise().query(studentQuery, [studentName, studentAge, studentGrade]);
   
       // Check if the student was successfully inserted
       if (studentResult.affectedRows === 0) {
@@ -771,7 +800,7 @@ async deleteStudents(req, res){
         INSERT INTO rfid_card (rfid_tag_id, student_id)
         VALUES (?, ?);
       `;
-      const [rfidResult] = await db.connection.promise().query(rfidQuery, [rfid, studentId]);
+      const [rfidResult] = await db.connection.promise().query(rfidQuery, [studentRfidTag, studentId]);
   
       // Check if the RFID tag was successfully inserted
       if (rfidResult.affectedRows === 0) {
@@ -806,7 +835,7 @@ async deleteStudents(req, res){
 
   
     try {
-      const studentId = req.body.studentId;  // Get the student ID from the request body
+      const studentId = req.body.studentId; 
       const {
         parentId,
         parentPhone,
@@ -911,7 +940,7 @@ async deleteStudents(req, res){
     }
   
     try {
-      // Query to update the attendance status
+     
       const [results] = await db.connection.promise().query(
         `
         UPDATE attendance
@@ -1077,33 +1106,71 @@ async emergencyMessage(req, res) {
 }
 
 
-async  updateAttendance() {
+async updateAttendance() {
   try {
-      console.log('Updating attendance records...');
-
       const markAbsentQuery = `
-          UPDATE attendance 
+          UPDATE attendance
           SET status = 'Absent'
-          WHERE status != 'Present' 
-          AND DATE(entry_time) = CURDATE()
-          AND exit_time IS NULL;`;
-
-
-      const markMissedQuery = `
-          UPDATE attendance 
-          SET status = 'Missed one time scanning'
-          WHERE status != 'Present'
-          AND DATE(entry_time) = CURDATE()
-          AND exit_time IS NOT NULL;`;
-
+          WHERE DATE(entry_time) = CURDATE() AND exit_time IS NULL;
+      `;
       await db.connection.promise().query(markAbsentQuery);
-      await db.connection.promise().query(markMissedQuery);
 
-      console.log('Attendance update complete.');
+      const markMissedOneTimeQuery = `
+          UPDATE attendance
+          SET status = 'Missed one time scanning'
+          WHERE DATE(entry_time) = CURDATE() AND exit_time IS NULL;
+      `;
+      await db.connection.promise().query(markMissedOneTimeQuery);
+
+      console.log("Attendance updated successfully.");
+      const [students] = await db.connection.promise().query(`
+          SELECT 
+              s.name AS student_name,
+              p.email AS parent_email,
+              a.status
+          FROM attendance a
+          JOIN student s ON a.student_id = s.student_id
+          JOIN parent p ON s.student_id = p.student_id
+          WHERE DATE(a.entry_time) = CURDATE() AND a.status != 'Present';
+      `);
+
+      for (const student of students) {
+          const { student_name, parent_email, status } = student;
+
+          const message = `
+              Dear Parent,
+              
+              This is to inform you that your child ${student_name} has the attendance status: "${status}" for today.
+              
+              Regards,
+              School Transport System
+          `;
+
+         
+           EmergencyMail(parent_email, message);
+      }
+
+      console.log("Emails sent to parents of students not marked Present.");
   } catch (error) {
-      console.error('Error updating attendance:', error);
+      console.error("Error updating attendance or sending emails:", error);
   }
 }
+
+async uploadFile(req, res) {
+  const file = req.file;
+  if(!file) {
+    return res.status(400).json({ message: 'No file uploaded' , success:false});
+  }
+  return res.status(200).json({
+    message: 'File uploaded successfully',
+    success: true,
+    filename: file.filename,
+    originalName: file.originalname,
+    path: file.path
+  });
+
+}
+
 }
   
 

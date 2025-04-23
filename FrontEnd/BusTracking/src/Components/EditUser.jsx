@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Signup.css";
+import configFile from "../Config/ApiConfig";
 
 const EditUser = ({ modle, Userdata, setIsEditUserVisible }) => {
   const [data, setData] = useState({
@@ -85,7 +86,7 @@ const EditUser = ({ modle, Userdata, setIsEditUserVisible }) => {
 
     try {
       const response = await axios.patch(
-        `http://localhost:8000/react/admin/updateStudent/${Userdata.student_id}`,
+        `${configFile.apiUrl}/react/admin/updateStudent/${Userdata.student_id}`,
         data,
         {
           headers: {

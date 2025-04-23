@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import "./Signup.css";
 import { sendData } from "./Axious";
+import configFile from "../Config/ApiConfig";
 
 function Otp({ getOpt, login }) {
   const inputRef = useRef([]);
@@ -37,7 +38,7 @@ function Otp({ getOpt, login }) {
       }
 
       const [verifyResponse, verifyError] = await sendData(
-        "http://localhost:8000/react/verifyOtp",
+        `${configFile.apiUrl}/react/verifyOtp`,
         { email: data.email, otp: otp }
       );
 
@@ -53,7 +54,7 @@ function Otp({ getOpt, login }) {
         login(true);
         console.log(verifyResponse.message);
         const [signupResponse, signupError] = await sendData(
-          "http://localhost:8000/react/userSignup",
+          `${configFile.apiUrl}/react/userSignup`,
           data
         );
 
@@ -127,7 +128,7 @@ function Otp({ getOpt, login }) {
       }
 
       const [response, error] = await sendData(
-        "http://localhost:8000/react/requestOtp",
+        `${configFile.apiUrl}/react/requestOtp`,
         { email: data.email }
       );
 

@@ -3,6 +3,7 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import axios from 'axios';
+import checkGeofence from '../CheckGeofence.js';
 class SocketServer {
     constructor(corsOptions) {
         this.app = express();
@@ -11,7 +12,12 @@ class SocketServer {
         this.app.use(express.urlencoded({ extended: true }));
         this.server = http.createServer(this.app);
         this.io = new Server(this.server, {
-            cors: corsOptions,
+            cors: {
+                origin: corsOptions.origin,
+                methods: corsOptions.methods,
+                credentials: corsOptions.credentials,
+                allowedHeaders: corsOptions.allowedHeaders
+              },
         });
         this.connectedClients = new Map();
         this.io.on('connection', (socket) => {
@@ -23,19 +29,31 @@ class SocketServer {
                 lastSeen: new Date().toISOString()
             });
             
-            socket.on('sendLocation', (data) => {
+            socket.on('sendLocation', async (data) => {
+                console.log("Hello from GPS");
+            
+                const { lat, long, accuracy } = data;
+                const isInsideCircle = checkGeofence(lat, long);
+            
+                if (!isInsideCircle) {
+                    try {
+                        await axios.post('http://localhost:8000/gps', {
+                            latitude: lat,
+                            longitude: long
+                        });
+                    } catch (error) {
+                        console.error('Failed to notify backend about geofence:', error);
+                    }
+                }
+            
                 console.log('Received location data from', socket.id, ':', data);
+            
                 const clientInfo = this.connectedClients.get(socket.id) || { id: socket.id };
-                clientInfo.type = 'driver'; 
-                clientInfo.location = {
-                    lat: data.lat,
-                    long: data.long,
-                    accuracy: data.accuracy
-                };
+                clientInfo.type = 'driver';
+                clientInfo.location = { lat, long, accuracy };
                 clientInfo.lastSeen = new Date().toISOString();
                 this.connectedClients.set(socket.id, clientInfo);
-                
-                
+            
                 this.io.emit('newLocation', {
                     ...data,
                     driverId: socket.id,

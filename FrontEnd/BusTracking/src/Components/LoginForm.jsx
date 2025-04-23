@@ -7,6 +7,7 @@ import Google from "./Google";
 import { sendData } from "./Axious";
 import { toast, Bounce } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import configFile from "../Config/ApiConfig";
 
 const Login = ({ onCloseLogin, onCloseSignup, login }) => {
   const [email, setEmail] = useState("");
@@ -83,7 +84,7 @@ const Login = ({ onCloseLogin, onCloseSignup, login }) => {
       console.log("Password:", password);
       try {
         const [response, error] = await sendData(
-          "http://localhost:8000/react/login",
+          `${configFile.apiUrl}/react/login`,
           { email, password }
         );
         if (error) {

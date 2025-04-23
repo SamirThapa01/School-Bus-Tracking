@@ -22,7 +22,7 @@ function rfidMail(email, studentName, scanTime, busNumber) {
               <ul>
                   <li><strong>Student Name:</strong> ${studentName}</li>
                   <li><strong>Scan Time:</strong> ${scanTime}</li>
-                  <li><strong>Bus Number:</strong> ${busNumber}</li>
+                  <li><strong>status:</strong> ${busNumber}</li>
               </ul>
               <p>If you were not expecting this notification, please contact school authorities immediately.</p>
               <p>Best regards,<br><strong>Hamro Bus Sewa Team</strong></p>

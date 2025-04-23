@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Signup.css";
+import configFile from "../Config/ApiConfig";
 
 const EditAttendance = ({ userData, setIsAttendanceVisible }) => {
   const [data, setData] = useState({
@@ -37,8 +38,8 @@ const EditAttendance = ({ userData, setIsAttendanceVisible }) => {
       return;
     }
 
-    try {
-      const endpoint = `http://localhost:8000/react/admin/updateAttendance/${userData.student_id}/${data.attendance_id}`;
+    try {               
+      const endpoint = `${configFile.apiUrl}/react/admin/updateAttendance/${userData.student_id}/${data.attendance_id}`;
 
       const response = await axios.put(
         endpoint,

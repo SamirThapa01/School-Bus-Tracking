@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Signup.css";
+import configFile from "../Config/ApiConfig";
 
 const CreateBus = ({ setIsCreateBusVisible, profileMode, busData }) => {
   const [data, setData] = useState({
@@ -56,7 +57,7 @@ const CreateBus = ({ setIsCreateBusVisible, profileMode, busData }) => {
 
       if (profileMode === "edit") {
         response = await axios.put(
-          `http://localhost:8000/react/admin/updateBus/${busData.bus_id}`,
+          `${configFile.apiUrl}/react/admin/updateBus/${busData.bus_id}`,
           data,
           {
             headers: {
@@ -72,7 +73,7 @@ const CreateBus = ({ setIsCreateBusVisible, profileMode, busData }) => {
       } else {
         // Create new bus
         response = await axios.post(
-          "http://localhost:8000/react/admin/insertBus",
+          `${configFile.apiUrl}/react/admin/insertBus`,
           data,
           {
             headers: {

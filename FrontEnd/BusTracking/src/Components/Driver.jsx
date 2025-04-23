@@ -10,203 +10,9 @@ import {
   PlayCircle,
   StopCircle,
   MessageCircle,
+  Loader,
 } from "lucide-react";
-const styles = {
-  container: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-    fontFamily: "Arial, sans-serif",
-    backgroundColor: "#f5f5f5",
-    margin: 0,
-    padding: 0,
-  },
-  header: {
-    backgroundColor: "#2563eb",
-    color: "white",
-    padding: "16px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-  },
-  headerContent: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: "20px",
-    fontWeight: "bold",
-    margin: 0,
-  },
-  connectionStatus: {
-    display: "flex",
-    alignItems: "center",
-  },
-  connectionText: {
-    marginLeft: "8px",
-    fontSize: "14px",
-  },
-  mainContent: {
-    flex: "1",
-    padding: "16px",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-    padding: "16px",
-    marginBottom: "24px",
-  },
-  cardHeader: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "16px",
-  },
-  cardTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    marginLeft: "8px",
-    margin: 0,
-  },
-  locationGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "8px",
-  },
-  locationItem: {
-    backgroundColor: "#f9fafb",
-    padding: "12px",
-    borderRadius: "4px",
-  },
-  locationItemFull: {
-    backgroundColor: "#f9fafb",
-    padding: "12px",
-    borderRadius: "4px",
-    gridColumn: "span 2",
-  },
-  locationLabel: {
-    color: "#6b7280",
-    fontSize: "14px",
-    margin: "0 0 4px 0",
-  },
-  locationValue: {
-    fontWeight: "500",
-    margin: 0,
-  },
-  statusAlert: {
-    padding: "12px",
-    marginBottom: "24px",
-    borderRadius: "8px",
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  successAlert: {
-    backgroundColor: "#d1fae5",
-    color: "#047857",
-  },
-  errorAlert: {
-    backgroundColor: "#fee2e2",
-    color: "#b91c1c",
-  },
-  emergencyButtonsGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "12px",
-  },
-  button: {
-    padding: "12px 16px",
-    borderRadius: "8px",
-    border: "none",
-    color: "white",
-    fontWeight: "500",
-    fontSize: "16px",
-    cursor: "pointer",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    transition: "background-color 0.2s",
-  },
-  shareLocationButton: {
-    backgroundColor: "#10b981",
-    marginTop: "16px",
-  },
-  stopSharingButton: {
-    backgroundColor: "#ef4444",
-    marginTop: "16px",
-  },
-  buttonIcon: {
-    marginRight: "8px",
-  },
-  medicalButton: {
-    backgroundColor: "#dc2626",
-  },
-  mechanicalButton: {
-    backgroundColor: "#f97316",
-  },
-  safetyButton: {
-    backgroundColor: "#eab308",
-  },
-  policeButton: {
-    backgroundColor: "#1d4ed8",
-  },
-  footer: {
-    backgroundColor: "#1f2937",
-    color: "white",
-    padding: "16px",
-    textAlign: "center",
-    fontSize: "14px",
-  },
-  footerContent: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footerText: {
-    marginLeft: "4px",
-  },
-  switchContainer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: "8px",
-  },
-  switchText: {
-    marginLeft: "8px",
-    fontWeight: "500",
-    fontSize: "14px",
-  },
-  messageInput: {
-    width: "100%",
-    padding: "12px",
-    borderRadius: "4px",
-    border: "1px solid #d1d5db",
-    marginBottom: "12px",
-    fontSize: "16px",
-  },
-  messageButton: {
-    backgroundColor: "#2563eb",
-    marginTop: "8px",
-  },
-  emergencyMessageCard: {
-    marginBottom: "24px",
-  },
-  sentMessages: {
-    backgroundColor: "#f0f9ff",
-    padding: "12px",
-    borderRadius: "4px",
-    marginTop: "12px",
-    maxHeight: "120px",
-    overflowY: "auto",
-  },
-  messageItem: {
-    padding: "8px 0",
-    borderBottom: "1px solid #e5e7eb",
-  },
-  messageTime: {
-    fontSize: "12px",
-    color: "#6b7280",
-    marginTop: "4px",
-  },
-};
+import configFile from "../Config/ApiConfig";
 
 const Driver = () => {
   const [location, setLocation] = useState({
@@ -222,9 +28,21 @@ const Driver = () => {
   const [emergencyMessage, setEmergencyMessage] = useState("");
   const [sentMessages, setSentMessages] = useState([]);
   const [socketReconnectAttempts, setSocketReconnectAttempts] = useState(0);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
 
   useEffect(() => {
-    const socketConnection = io("http://192.168.1.73:8000", {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const socketConnection = io(`${configFile.socketioUrl}`, {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       timeout: 10000,
@@ -527,10 +345,288 @@ const Driver = () => {
     }, 3000);
   };
 
+  // Styles with responsive design
+  const styles = {
+    container: {
+      display: "flex",
+      flexDirection: "column",
+      minHeight: "100vh",
+      fontFamily:
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      backgroundColor: "#f5f5f5",
+      margin: 0,
+      padding: 0,
+    },
+    header: {
+      backgroundColor: "#2563eb",
+      color: "white",
+      padding: "16px",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    },
+    headerContent: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      maxWidth: "1200px",
+      margin: "0 auto",
+      width: "100%",
+    },
+    title: {
+      fontSize: "20px",
+      fontWeight: "bold",
+      margin: 0,
+    },
+    connectionStatus: {
+      display: "flex",
+      alignItems: "center",
+    },
+    connectionText: {
+      marginLeft: "8px",
+      fontSize: "14px",
+    },
+    mainContent: {
+      flex: "1",
+      padding: isMobileView ? "16px" : "32px",
+      maxWidth: "1200px",
+      margin: "0 auto",
+      width: "100%",
+    },
+    dashboard: {
+      display: isMobileView ? "block" : "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "24px",
+    },
+    leftColumn: {
+      gridColumn: "1 / 2",
+    },
+    rightColumn: {
+      gridColumn: "2 / 3",
+    },
+    fullWidth: {
+      gridColumn: "1 / -1",
+    },
+    card: {
+      backgroundColor: "white",
+      borderRadius: "8px",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+      padding: "20px",
+      marginBottom: "24px",
+      transition: "transform 0.2s, box-shadow 0.2s",
+      border: "1px solid rgba(0,0,0,0.05)",
+    },
+    cardHover: {
+      transform: "translateY(-2px)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+    },
+    cardHeader: {
+      display: "flex",
+      alignItems: "center",
+      marginBottom: "16px",
+    },
+    cardTitle: {
+      fontSize: "18px",
+      fontWeight: "600",
+      marginLeft: "8px",
+      margin: 0,
+      color: "#1e293b",
+    },
+    locationGrid: {
+      display: "grid",
+      gridTemplateColumns: isMobileView ? "1fr 1fr" : "1fr 1fr 1fr",
+      gap: "12px",
+    },
+    locationItem: {
+      backgroundColor: "#f9fafb",
+      padding: "12px",
+      borderRadius: "6px",
+      border: "1px solid #e5e7eb",
+    },
+    locationItemFull: {
+      backgroundColor: "#f9fafb",
+      padding: "12px",
+      borderRadius: "6px",
+      gridColumn: isMobileView ? "span 2" : "span 3",
+      border: "1px solid #e5e7eb",
+    },
+    locationLabel: {
+      color: "#6b7280",
+      fontSize: "14px",
+      margin: "0 0 4px 0",
+    },
+    locationValue: {
+      fontWeight: "500",
+      margin: 0,
+      fontSize: "16px",
+      color: "#1e293b",
+    },
+    statusAlert: {
+      padding: "12px 16px",
+      marginBottom: "24px",
+      borderRadius: "8px",
+      textAlign: "center",
+      fontWeight: "500",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "8px",
+      animation: "fadeIn 0.3s ease-in-out",
+    },
+    successAlert: {
+      backgroundColor: "#d1fae5",
+      color: "#047857",
+      border: "1px solid #a7f3d0",
+    },
+    errorAlert: {
+      backgroundColor: "#fee2e2",
+      color: "#b91c1c",
+      border: "1px solid #fecaca",
+    },
+    emergencyButtonsGrid: {
+      display: isMobileView ? "grid" : "flex",
+      gridTemplateColumns: "1fr",
+      gap: "12px",
+      justifyContent: "space-between",
+    },
+    button: {
+      padding: "12px 16px",
+      borderRadius: "8px",
+      border: "none",
+      color: "white",
+      fontWeight: "500",
+      fontSize: "16px",
+      cursor: "pointer",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      transition: "background-color 0.2s, transform 0.1s",
+      flex: isMobileView ? "auto" : "1",
+      margin: isMobileView ? "0" : "0 6px",
+    },
+    shareLocationButton: {
+      backgroundColor: "#10b981",
+      marginTop: "16px",
+      "&:hover": {
+        backgroundColor: "#059669",
+      },
+    },
+    stopSharingButton: {
+      backgroundColor: "#ef4444",
+      marginTop: "16px",
+      "&:hover": {
+        backgroundColor: "#dc2626",
+      },
+    },
+    buttonIcon: {
+      marginRight: "8px",
+    },
+    medicalButton: {
+      backgroundColor: "#dc2626",
+      "&:hover": {
+        backgroundColor: "#b91c1c",
+      },
+    },
+    mechanicalButton: {
+      backgroundColor: "#f97316",
+      "&:hover": {
+        backgroundColor: "#ea580c",
+      },
+    },
+    safetyButton: {
+      backgroundColor: "#eab308",
+      "&:hover": {
+        backgroundColor: "#ca8a04",
+      },
+    },
+    footer: {
+      backgroundColor: "#1e293b",
+      color: "white",
+      padding: "16px",
+      textAlign: "center",
+      fontSize: "14px",
+    },
+    footerContent: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      maxWidth: "1200px",
+      margin: "0 auto",
+    },
+    footerText: {
+      marginLeft: "4px",
+    },
+    messageInput: {
+      width: "100%",
+      padding: "12px",
+      borderRadius: "6px",
+      border: "1px solid #d1d5db",
+      marginBottom: "12px",
+      fontSize: "16px",
+      outline: "none",
+      transition: "border-color 0.2s",
+      "&:focus": {
+        borderColor: "#3b82f6",
+        boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.2)",
+      },
+    },
+    messageButton: {
+      backgroundColor: "#2563eb",
+      marginTop: "8px",
+      width: "100%",
+      "&:hover": {
+        backgroundColor: "#1d4ed8",
+      },
+    },
+    emergencyMessageCard: {
+      marginBottom: "24px",
+    },
+    sentMessages: {
+      backgroundColor: "#f0f9ff",
+      padding: "12px",
+      borderRadius: "6px",
+      marginTop: "16px",
+      maxHeight: isMobileView ? "120px" : "200px",
+      overflowY: "auto",
+      border: "1px solid #e0e7ff",
+    },
+    messageItem: {
+      padding: "10px",
+      borderRadius: "4px",
+      marginBottom: "8px",
+      backgroundColor: "#ffffff",
+      border: "1px solid #e5e7eb",
+    },
+    messageTime: {
+      fontSize: "12px",
+      color: "#6b7280",
+      marginTop: "4px",
+    },
+    retryButton: {
+      backgroundColor: "#3b82f6",
+      padding: "6px 12px",
+      fontSize: "14px",
+      borderRadius: "6px",
+      marginLeft: "8px",
+      "&:hover": {
+        backgroundColor: "#2563eb",
+      },
+    },
+    mapPlaceholder: {
+      height: isMobileView ? "200px" : "300px",
+      backgroundColor: "#e5e7eb",
+      borderRadius: "6px",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      flexDirection: "column",
+      gap: "12px",
+      color: "#6b7280",
+    },
+  };
+
   return (
     <div style={styles.container}>
       {/* Header */}
-      <div style={styles.header}>
+      <header style={styles.header}>
         <div style={styles.headerContent}>
           <h1 style={styles.title}>Driver Mode</h1>
           <div style={styles.connectionStatus}>
@@ -544,10 +640,10 @@ const Driver = () => {
             </span>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div style={styles.mainContent}>
+      <main style={styles.mainContent}>
         {/* Connection retry button when disconnected */}
         {!connected && (
           <div
@@ -560,71 +656,21 @@ const Driver = () => {
               alignItems: "center",
             }}
           >
-            <span>Not connected to server</span>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <AlertCircle size={18} style={{ marginRight: "8px" }} />
+              <span>Not connected to server</span>
+            </div>
             <button
               onClick={retryConnection}
               style={{
                 ...styles.button,
-                backgroundColor: "#3b82f6",
-                padding: "6px 12px",
-                fontSize: "14px",
+                ...styles.retryButton,
               }}
             >
               Retry Connection
             </button>
           </div>
         )}
-
-        {/* Location Card */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <MapPin color="#2563eb" size={20} />
-            <h2 style={styles.cardTitle}>Current Location</h2>
-          </div>
-
-          <div style={styles.locationGrid}>
-            <div style={styles.locationItem}>
-              <p style={styles.locationLabel}>Latitude</p>
-              <p style={styles.locationValue}>
-                {location.lat?.toFixed(6) || "Waiting..."}
-              </p>
-            </div>
-            <div style={styles.locationItem}>
-              <p style={styles.locationLabel}>Longitude</p>
-              <p style={styles.locationValue}>
-                {location.long?.toFixed(6) || "Waiting..."}
-              </p>
-            </div>
-            <div style={styles.locationItemFull}>
-              <p style={styles.locationLabel}>Accuracy</p>
-              <p style={styles.locationValue}>
-                {location.accuracy
-                  ? `${location.accuracy.toFixed(1)} meters`
-                  : "Waiting..."}
-              </p>
-            </div>
-          </div>
-
-          {/* Location Sharing Controls */}
-          {!isSharing ? (
-            <button
-              onClick={startLocationSharing}
-              style={{ ...styles.button, ...styles.shareLocationButton }}
-              disabled={!connected}
-            >
-              <PlayCircle size={20} style={styles.buttonIcon} />
-              Start Sharing Location
-            </button>
-          ) : (
-            <button
-              onClick={stopLocationSharing}
-              style={{ ...styles.button, ...styles.stopSharingButton }}
-            >
-              <StopCircle size={20} style={styles.buttonIcon} />
-              Stop Sharing Location
-            </button>
-          )}
-        </div>
 
         {/* Status message */}
         {emergencyStatus && (
@@ -640,93 +686,211 @@ const Driver = () => {
                 : styles.successAlert),
             }}
           >
+            {emergencyStatus.includes("Cannot") ||
+            emergencyStatus.includes("Error") ||
+            emergencyStatus.includes("not supported") ||
+            emergencyStatus.includes("Failed") ||
+            emergencyStatus.includes("Unable") ? (
+              <AlertCircle size={18} />
+            ) : (
+              <Shield size={18} />
+            )}
             {emergencyStatus}
           </div>
         )}
 
-        {/* Emergency Message Card */}
-        <div style={{ ...styles.card, ...styles.emergencyMessageCard }}>
-          <div style={styles.cardHeader}>
-            <MessageCircle color="#2563eb" size={20} />
-            <h2 style={styles.cardTitle}>Emergency Message</h2>
-          </div>
+        <div style={styles.dashboard}>
+          {/* Left Column - Location & Map */}
+          <div style={isMobileView ? {} : styles.leftColumn}>
+            {/* Location Card */}
+            <div style={styles.card}>
+              <div style={styles.cardHeader}>
+                <MapPin color="#2563eb" size={20} />
+                <h2 style={styles.cardTitle}>Current Location</h2>
+              </div>
 
-          <input
-            type="text"
-            value={emergencyMessage}
-            onChange={(e) => setEmergencyMessage(e.target.value)}
-            placeholder="Type your emergency message here..."
-            style={styles.messageInput}
-            disabled={!connected}
-          />
-
-          <button
-            onClick={sendMessage}
-            style={{ ...styles.button, ...styles.messageButton }}
-            disabled={!connected || !emergencyMessage.trim()}
-          >
-            <MessageCircle size={20} style={styles.buttonIcon} />
-            Send Emergency Message
-          </button>
-
-          {sentMessages.length > 0 && (
-            <div style={styles.sentMessages}>
-              <p style={styles.locationLabel}>Recent Messages:</p>
-              {sentMessages.map((msg, index) => (
-                <div key={index} style={styles.messageItem}>
-                  <p style={styles.locationValue}>{msg.text}</p>
-                  <p style={styles.messageTime}>
-                    {formatMessageTime(msg.timestamp)}
+              <div style={styles.locationGrid}>
+                <div style={styles.locationItem}>
+                  <p style={styles.locationLabel}>Latitude</p>
+                  <p style={styles.locationValue}>
+                    {location.lat?.toFixed(6) || "Waiting..."}
                   </p>
                 </div>
-              ))}
+                <div style={styles.locationItem}>
+                  <p style={styles.locationLabel}>Longitude</p>
+                  <p style={styles.locationValue}>
+                    {location.long?.toFixed(6) || "Waiting..."}
+                  </p>
+                </div>
+                {!isMobileView && (
+                  <div style={styles.locationItem}>
+                    <p style={styles.locationLabel}>Accuracy</p>
+                    <p style={styles.locationValue}>
+                      {location.accuracy
+                        ? `${location.accuracy.toFixed(1)} meters`
+                        : "Waiting..."}
+                    </p>
+                  </div>
+                )}
+                {isMobileView && (
+                  <div style={styles.locationItemFull}>
+                    <p style={styles.locationLabel}>Accuracy</p>
+                    <p style={styles.locationValue}>
+                      {location.accuracy
+                        ? `${location.accuracy.toFixed(1)} meters`
+                        : "Waiting..."}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Location Sharing Controls */}
+              {!isSharing ? (
+                <button
+                  onClick={startLocationSharing}
+                  style={{ ...styles.button, ...styles.shareLocationButton }}
+                  disabled={!connected}
+                >
+                  <PlayCircle size={20} style={styles.buttonIcon} />
+                  Start Sharing Location
+                </button>
+              ) : (
+                <button
+                  onClick={stopLocationSharing}
+                  style={{ ...styles.button, ...styles.stopSharingButton }}
+                >
+                  <StopCircle size={20} style={styles.buttonIcon} />
+                  Stop Sharing Location
+                </button>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Emergency Buttons */}
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <AlertCircle color="#dc2626" size={20} />
-            <h2 style={styles.cardTitle}>Emergency Options</h2>
+            {/* Emergency Buttons - Only shown on mobile or left column on desktop */}
+            {isMobileView && (
+              <div style={styles.card}>
+                <div style={styles.cardHeader}>
+                  <AlertCircle color="#dc2626" size={20} />
+                  <h2 style={styles.cardTitle}>Emergency Options</h2>
+                </div>
+
+                <div style={styles.emergencyButtonsGrid}>
+                  <button
+                    onClick={() => sendEmergencyAlert("Medical problem")}
+                    style={{ ...styles.button, ...styles.medicalButton }}
+                    disabled={!connected}
+                  >
+                    Medical Emergency
+                  </button>
+
+                  <button
+                    onClick={() => sendEmergencyAlert("Problem in vehicle")}
+                    style={{ ...styles.button, ...styles.mechanicalButton }}
+                    disabled={!connected}
+                  >
+                    Vehicle Breakdown
+                  </button>
+
+                  <button
+                    onClick={() => sendEmergencyAlert("Accident alert")}
+                    style={{ ...styles.button, ...styles.safetyButton }}
+                    disabled={!connected}
+                  >
+                    Accident
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div style={styles.emergencyButtonsGrid}>
-            <button
-              onClick={() => sendEmergencyAlert("Medical problem")}
-              style={{ ...styles.button, ...styles.medicalButton }}
-              disabled={!connected}
-            >
-              Medical Emergency
-            </button>
+          {/* Right Column - Emergency Message & Buttons */}
+          <div style={isMobileView ? {} : styles.rightColumn}>
+            {/* Emergency Message Card */}
+            <div style={{ ...styles.card, ...styles.emergencyMessageCard }}>
+              <div style={styles.cardHeader}>
+                <MessageCircle color="#2563eb" size={20} />
+                <h2 style={styles.cardTitle}>Emergency Message</h2>
+              </div>
 
-            <button
-              onClick={() => sendEmergencyAlert("Problem in vehicle")}
-              style={{ ...styles.button, ...styles.mechanicalButton }}
-              disabled={!connected}
-            >
-              Vehicle Breakdown
-            </button>
+              <input
+                type="text"
+                value={emergencyMessage}
+                onChange={(e) => setEmergencyMessage(e.target.value)}
+                placeholder="Type your emergency message here..."
+                style={styles.messageInput}
+                disabled={!connected}
+              />
 
-            <button
-              onClick={() => sendEmergencyAlert("Accident alert")}
-              style={{ ...styles.button, ...styles.safetyButton }}
-              disabled={!connected}
-            >
-              Accident
-            </button>
+              <button
+                onClick={sendMessage}
+                style={{ ...styles.button, ...styles.messageButton }}
+                disabled={!connected || !emergencyMessage.trim()}
+              >
+                <MessageCircle size={20} style={styles.buttonIcon} />
+                Send Emergency Message
+              </button>
+
+              {sentMessages.length > 0 && (
+                <div style={styles.sentMessages}>
+                  <p style={styles.locationLabel}>Recent Messages:</p>
+                  {sentMessages.map((msg, index) => (
+                    <div key={index} style={styles.messageItem}>
+                      <p style={styles.locationValue}>{msg.text}</p>
+                      <p style={styles.messageTime}>
+                        {formatMessageTime(msg.timestamp)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Emergency Buttons - Only in right column on desktop */}
+            {!isMobileView && (
+              <div style={styles.card}>
+                <div style={styles.cardHeader}>
+                  <AlertCircle color="#dc2626" size={20} />
+                  <h2 style={styles.cardTitle}>Emergency Options</h2>
+                </div>
+
+                <div style={styles.emergencyButtonsGrid}>
+                  <button
+                    onClick={() => sendEmergencyAlert("Medical problem")}
+                    style={{ ...styles.button, ...styles.medicalButton }}
+                    disabled={!connected}
+                  >
+                    Medical Emergency
+                  </button>
+
+                  <button
+                    onClick={() => sendEmergencyAlert("Problem in vehicle")}
+                    style={{ ...styles.button, ...styles.mechanicalButton }}
+                    disabled={!connected}
+                  >
+                    Vehicle Breakdown
+                  </button>
+
+                  <button
+                    onClick={() => sendEmergencyAlert("Accident alert")}
+                    style={{ ...styles.button, ...styles.safetyButton }}
+                    disabled={!connected}
+                  >
+                    Accident
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </main>
 
-      <div style={styles.footer}>
+      <footer style={styles.footer}>
         <div style={styles.footerContent}>
           <Shield size={16} />
           <p style={styles.footerText}>
             Location sharing: {isSharing ? "Active" : "Inactive"}
           </p>
         </div>
-      </div>
+      </footer>
     </div>
   );
 };
