@@ -5,7 +5,7 @@ function EmergencyMail(email, message) {
     service: 'gmail',
     auth: {
       user: 'hamrobussewa@gmail.com',
-      pass: 'fwpi ieub acus lwvl'
+      pass: ''
     }
   });
 
