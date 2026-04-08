@@ -5,7 +5,7 @@ function rfidMail(email, studentName, scanTime, busNumber) {
     service: 'gmail',
     auth: {
       user: 'hamrobussewa@gmail.com', 
-      pass: 'fwpi ieub acus lwvl'  
+      pass: ''  
     }
   });
 
